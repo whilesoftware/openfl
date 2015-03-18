@@ -12,6 +12,9 @@ import lime.graphics.GLRenderContext;
 import lime.graphics.RenderContext;
 import lime.math.Matrix4;
 import lime.utils.GLUtils;
+import lime.ui.Gamepad;
+import lime.ui.GamepadAxis;
+import lime.ui.GamepadButton;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.ui.Mouse;
@@ -636,35 +639,35 @@ class Stage extends DisplayObjectContainer implements IModule {
 	}
 	
 	
-	public function onGamepadAxisMove (id:Int, axis:Int, value:Float):Void {
+	public function onGamepadAxisMove (gamepad:Gamepad, axis:GamepadAxis, value:Float):Void {
 		
 		
 		
 	}
 	
 	
-	public function onGamepadButtonDown (id:Int, button:Int):Void {
+	public function onGamepadButtonDown (gamepad:Gamepad, button:GamepadButton):Void {
 		
 		
 		
 	}
 	
 	
-	public function onGamepadButtonUp (id:Int, button:Int):Void {
+	public function onGamepadButtonUp (gamepad:Gamepad, button:GamepadButton):Void {
 		
 		
 		
 	}
 	
 	
-	public function onGamepadConnect (id:Int):Void {
+	public function onGamepadConnect (gamepad:Gamepad):Void {
 		
 		
 		
 	}
 	
 	
-	public function onGamepadDisconnect (id:Int):Void {
+	public function onGamepadDisconnect (gamepad:Gamepad):Void {
 		
 		
 		
@@ -1264,7 +1267,7 @@ class Stage extends DisplayObjectContainer implements IModule {
 			var keyCode = __convertKeyCode (keyCode);
 			var charCode = keyCode;
 			
-			var event = new KeyboardEvent (KeyboardEvent.KEY_DOWN, true, false, charCode, keyCode, null, modifier.ctrlKey, modifier.altKey, modifier.shiftKey, modifier.metaKey);
+			var event = new KeyboardEvent (type, true, false, charCode, keyCode, null, modifier.ctrlKey, modifier.altKey, modifier.shiftKey, modifier.metaKey);
 			
 			stack.reverse ();
 			__fireEvent (event, stack);
