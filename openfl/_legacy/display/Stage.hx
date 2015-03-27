@@ -12,6 +12,7 @@ import openfl.display.StageDisplayState;
 import openfl.display.StageScaleMode;
 import openfl.events.FocusEvent;
 import openfl.events.JoystickEvent;
+import openfl.events.GamepadEvent;
 import openfl.events.KeyboardEvent;
 import openfl.events.MouseEvent;
 import openfl.events.SystemEvent;
@@ -529,7 +530,19 @@ class Stage extends DisplayObjectContainer {
 				case 33: // etRenderContextRestored
 					
 					__onRenderContext (true);
+
+				case 34: // etGamepadAxisMove
+					__onGamepad (event, GamepadEvent.AXIS_MOVE);
+				case 35: // etGamepadButtonDown
+					__onGamepad (event, GamepadEvent.BUTTON_DOWN);
+				case 36: // etGamepadButtonUp
+					__onGamepad (event, GamepadEvent.BUTTON_UP);
+				case 37: // etGamepadConnect
+					__onGamepad (event, GamepadEvent.GAMEPAD_CONNECT);
+				case 38: // etGamepadDisconnect
+					__onGamepad (event, GamepadEvent.GAMEPAD_DISCONNECT);
 				
+
 				// TODO: user, sys_wm, sound_finished
 				
 			}
@@ -664,6 +677,45 @@ class Stage extends DisplayObjectContainer {
 		
 	}
 	
+
+	@:noCompletion private function __onGamepad (event:Dynamic, type:String):Void {
+		var gamepadEvent:GamepadEvent = null;
+		
+		//joystickEvent = new JoystickEvent (type, false, false, event.id, event.code);
+		gamepadEvent = new GamepadEvent(type);
+
+		// populate the gamepad event class
+		switch(type) {
+			case GamepadEvent.AXIS_MOVE:
+				gamepadEvent.device = event.id;
+				gamepadEvent.code   = event.code;
+				gamepadEvent.value  = event.scaleX;
+
+			case GamepadEvent.BUTTON_DOWN:
+				gamepadEvent.device = event.id;
+				gamepadEvent.code   = event.code;
+				gamepadEvent.value  = event.scaleX;
+
+			case GamepadEvent.BUTTON_UP:
+				gamepadEvent.device = event.id;
+				gamepadEvent.code   = event.code;
+				gamepadEvent.value  = event.scaleX;
+
+			case GamepadEvent.GAMEPAD_CONNECT:
+				gamepadEvent.device = event.id;
+				gamepadEvent.code   = event.code;
+				gamepadEvent.value  = event.scaleX;
+
+			case GamepadEvent.GAMEPAD_DISCONNECT:
+				gamepadEvent.device = event.id;
+				gamepadEvent.code   = event.code;
+				gamepadEvent.value  = event.scaleX;
+
+		}
+
+		// send the event to the openfl stage, to be pumped to all subscribers
+		__dispatchEvent (gamepadEvent);
+	}
 	
 	@:noCompletion private function __onJoystick (event:Dynamic, type:String):Void {
 		
