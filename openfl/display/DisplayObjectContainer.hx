@@ -665,6 +665,8 @@ class DisplayObjectContainer extends InteractiveObject {
 	
 	@:noCompletion private override function __getBounds (rect:Rectangle, matrix:Matrix):Void {
 		
+		super.__getBounds(rect, matrix);
+		
 		if (__children.length == 0) return;
 		
 		var matrixCache = null;
@@ -683,7 +685,7 @@ class DisplayObjectContainer extends InteractiveObject {
 			child.__getBounds (rect, null);
 			
 		}
-			
+		
 		if (matrix != null) {
 			
 			__worldTransform = matrixCache;
