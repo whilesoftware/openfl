@@ -1,4 +1,4 @@
-package openfl._legacy; #if openfl_legacy
+package openfl._legacy; #if (openfl_legacy && !lime_hybrid)
 #if !macro
 
 
@@ -1945,4 +1945,6 @@ class Assets {
 
 
 #end
+#else
+typedef Assets = openfl.Assets;
 #end
