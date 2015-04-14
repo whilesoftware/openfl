@@ -189,6 +189,15 @@ class BitmapDataTest {
 		
 		Assert.areEqual (hex (0xFFFF0000), hex (bitmapData.getPixel32 (0, 0)));
 		Assert.areEqual (hex (0xFFFF0000), hex (bitmapData.getPixel32 (50, 50)));
+		
+		var colorTransform = new ColorTransform (0, 0, 0, 1, 0x88, 0, 0, 0);
+		
+		var bitmapData = new BitmapData (100, 100);
+		bitmapData.__image.premultiplied = true;
+		bitmapData.colorTransform (new Rectangle (0, 0, 50, 50), colorTransform);
+		
+		Assert.areEqual (hex (0xFF880000), hex (bitmapData.getPixel32 (0, 0)));
+		Assert.areEqual (hex (0xFFFFFFFF), hex (bitmapData.getPixel32 (50, 50)));
 		#end
 		
 	}
@@ -240,6 +249,8 @@ class BitmapDataTest {
 		
 		var bitmapData = new BitmapData (100, 100, true, 0xFF000000);
 		var bitmapData2 = new BitmapData (100, 100, true, 0xFFFF0000);
+		
+		Assert.areEqual (hex (0xFF000000), hex (bitmapData.getPixel32 (0, 0)));
 		
 		bitmapData.copyChannel (bitmapData2, bitmapData2.rect, new Point (), BitmapDataChannel.RED, BitmapDataChannel.RED);
 		
@@ -587,6 +598,7 @@ class BitmapDataTest {
 		
 		var expectedColor = color;
 		if (sourceAlpha) {
+			
 			// TODO: Native behavior is different than the flash target here.
 			//	   The flash target premultiplies RGB by the alpha value.
 			//	   If the native behavior is changed, this test needs to be
@@ -594,8 +606,8 @@ class BitmapDataTest {
 			if ((expectedColor & 0xFF000000) == 0) {
 				expectedColor = 0;
 			}
-		}
-		else {
+			
+		} else {
 			// Surfaces that don't support alpha return FF for the alpha value, so
 			// set our expected alpha to FF no matter what the initial value was
 			expectedColor |= 0xFF000000;
@@ -658,7 +670,9 @@ class BitmapDataTest {
 		// TODO: Native targets do not match the flash behavior here.
 		//	   If the native target is changed to match flash, 
 		//	   testGetSetPixels() must be changed to match.
+		#if !neko
 		testGetSetPixels(0x80112233, true, true);
+		#end
 	}
 	
 	@Test public function testGetAndSetPixelsOpqaueARGBToARGB() {
@@ -670,7 +684,10 @@ class BitmapDataTest {
 	}
 	
 	@Test public function testGetAndSetPixelsSemiARGBToRGB() {
+		// TODO
+		#if !neko
 		testGetSetPixels(0x80112233, true, false);
+		#end
 	}
 	
 	@Test public function testGetAndSetPixelsOpqaueARGBToRGB() {

@@ -6,6 +6,7 @@ import lime.graphics.opengl.GLTexture;
 import lime.graphics.GLRenderContext;
 import lime.graphics.Image;
 import lime.graphics.ImageBuffer;
+import lime.graphics.ImageChannel;
 import lime.graphics.utils.ImageCanvasUtil;
 import lime.math.ColorMatrix;
 import lime.utils.Float32Array;
@@ -141,6 +142,7 @@ class BitmapData implements IBitmapDrawable {
 	@:noCompletion private var __textureImage:Image;
 	@:noCompletion private var __framebuffer:FilterTexture;
 	@:noCompletion private var __uvData:TextureUvs;
+	@:noCompletion private var __uvFlipped:Bool = false;
 	
 	private var __spritebatch:SpriteBatch;
 	
@@ -178,17 +180,20 @@ class BitmapData implements IBitmapDrawable {
 		if (width > 0 && height > 0) {
 			
 			if (transparent) {
-
-				if ((fillColor & 0xFF000000) == 0) {				
+				
+				if ((fillColor & 0xFF000000) == 0) {
+					
 					fillColor = 0;
+					
 				}
-                
-			}
-			else {
+				
+			} else {
 				
 				fillColor = (0xFF << 24) | (fillColor & 0xFFFFFF);
 				
 			}
+			
+			fillColor = (fillColor << 8) | ((fillColor >> 24) & 0xFF);
 			
 			__image = new Image (null, 0, 0, width, height, fillColor);
 			__image.transparent = transparent;
@@ -550,7 +555,10 @@ class BitmapData implements IBitmapDrawable {
 				
 			case DATA:
 				
-				var renderSession = @:privateAccess Lib.current.stage.__renderer.renderSession;
+				var renderer = @:privateAccess Lib.current.stage.__renderer;
+				if (renderer == null) return;
+				
+				var renderSession = @:privateAccess renderer.renderSession;
 				var gl:GLRenderContext = renderSession.gl;
 				if (gl == null) return;
 				
@@ -565,7 +573,7 @@ class BitmapData implements IBitmapDrawable {
 				var tmpRect = clipRect.clone();
 				// Flip Y
 				tmpRect.y = height - tmpRect.bottom;
-
+				
 				var drawSelf = false;
 				if (__spritebatch == null) {
 					__spritebatch = new SpriteBatch(gl);
@@ -677,7 +685,7 @@ class BitmapData implements IBitmapDrawable {
 	public function fillRect (rect:Rectangle, color:Int):Void {
 		
 		if (!__isValid || rect == null) return;
-		__image.fillRect (rect.__toLimeRectangle (), color);
+		__image.fillRect (rect.__toLimeRectangle (), color, ARGB);
 		
 	}
 	
@@ -696,7 +704,7 @@ class BitmapData implements IBitmapDrawable {
 	public function floodFill (x:Int, y:Int, color:Int):Void {
 		
 		if (!__isValid) return;
-		__image.floodFill (x, y, color);
+		__image.floodFill (x, y, color, ARGB);
 		
 	}
 	
@@ -877,7 +885,7 @@ class BitmapData implements IBitmapDrawable {
 	public function getPixel (x:Int, y:Int):Int {
 		
 		if (!__isValid) return 0;
-		return __image.getPixel (x, y);
+		return __image.getPixel (x, y, ARGB);
 		
 	}
 	
@@ -907,7 +915,7 @@ class BitmapData implements IBitmapDrawable {
 	public function getPixel32 (x:Int, y:Int):Int {
 		
 		if (!__isValid) return 0;
-		return __image.getPixel32 (x, y);
+		return __image.getPixel32 (x, y, ARGB);
 		
 	}
 	
@@ -925,7 +933,7 @@ class BitmapData implements IBitmapDrawable {
 		
 		if (!__isValid) return null;
 		if (rect == null) rect = this.rect;
-		return __image.getPixels (rect.__toLimeRectangle ());
+		return __image.getPixels (rect.__toLimeRectangle (), ARGB);
 		
 	}
 	
@@ -1229,7 +1237,7 @@ class BitmapData implements IBitmapDrawable {
 	public function setPixel (x:Int, y:Int, color:Int):Void {
 		
 		if (!__isValid) return;
-		__image.setPixel (x, y, color);
+		__image.setPixel (x, y, color, ARGB);
 		
 	}
 	
@@ -1268,7 +1276,7 @@ class BitmapData implements IBitmapDrawable {
 	public function setPixel32 (x:Int, y:Int, color:Int):Void {
 		
 		if (!__isValid) return;
-		__image.setPixel32 (x, y, color);
+		__image.setPixel32 (x, y, color, ARGB);
 		
 	}
 	
@@ -1295,7 +1303,7 @@ class BitmapData implements IBitmapDrawable {
 	public function setPixels (rect:Rectangle, byteArray:ByteArray):Void {
 		
 		if (!__isValid || rect == null) return;
-		__image.setPixels (rect.__toLimeRectangle (), byteArray);
+		__image.setPixels (rect.__toLimeRectangle (), byteArray, ARGB);
 		
 	}
 	
@@ -1555,6 +1563,8 @@ class BitmapData implements IBitmapDrawable {
 	@:noCompletion private function __createUVs (?verticalFlip:Bool = false):Void {
 		
 		if (__uvData == null) __uvData = new TextureUvs();
+		
+		__uvFlipped = verticalFlip;
 		
 		if (verticalFlip) {
 			__uvData.x0 = 0;

@@ -604,7 +604,9 @@ class Stage extends DisplayObjectContainer implements IModule {
 			
 			case OPENGL (gl):
 				
+				#if !disable_cffi
 				__renderer = new GLRenderer (stageWidth, stageHeight, gl);
+				#end
 			
 			case CANVAS (context):
 				
@@ -1041,7 +1043,7 @@ class Stage extends DisplayObjectContainer implements IModule {
 		if (stack.length > 0) {
 			
 			var keyCode = Keyboard.convertKeyCode (keyCode);
-			var charCode = Keyboard.__getCharCode (keyCode);
+			var charCode = Keyboard.__getCharCode (keyCode, modifier.shiftKey);
 			
 			var event = new KeyboardEvent (type, true, false, charCode, keyCode, null, modifier.ctrlKey, modifier.altKey, modifier.shiftKey, modifier.metaKey);
 			
