@@ -26,8 +26,9 @@ import openfl.geom.Point;
 import openfl.geom.Rectangle;
 import openfl.text.Font;
 import openfl.text.TextFormatAlign;
+import openfl.Lib;
 
-#if js
+#if (js && html5)
 import js.html.CanvasElement;
 import js.html.CanvasRenderingContext2D;
 import js.html.CSSStyleDeclaration;
@@ -574,13 +575,14 @@ class TextField extends InteractiveObject {
 	@:noCompletion private var __textFormat:TextFormat;
 	@:noCompletion private var __textLayout:TextLayout;
 	@:noCompletion private var __texture:GLTexture;
-	@:noCompletion private var __tileData:Array<Array<Float>>;
-	@:noCompletion private var __tilesheets:Array<Tilesheet>;
+	@:noCompletion private var __tileData:Map<Tilesheet, Array<Float>>;
+	@:noCompletion private var __tileDataLength:Map<Tilesheet, Int>;
+	@:noCompletion private var __tilesheets:Map<Tilesheet, Bool>;
 	@:noCompletion private var __width:Float;
 	
 	@:noCompletion private static var __utf8_endline_code:Int = 10;
 	
-	#if js
+	#if (js && html5)
 	private var __div:DivElement;
 	private var __hiddenInput:InputElement;
 	#end
@@ -919,16 +921,27 @@ class TextField extends InteractiveObject {
 			__hiddenInput.type = 'text';
 			__hiddenInput.style.position = 'absolute';
 			__hiddenInput.style.opacity = "0";
-			untyped (__hiddenInput.style).pointerEvents = 'none';
-			__hiddenInput.style.left = (x + ((__canvas != null) ? __canvas.offsetLeft : 0)) + 'px';
-			__hiddenInput.style.top = (y + ((__canvas != null) ? __canvas.offsetTop : 0)) + 'px';
-			__hiddenInput.style.width = __width + 'px';
-			__hiddenInput.style.height = __height + 'px';
-			__hiddenInput.style.zIndex = "0";
+			__hiddenInput.style.color = "transparent";
 			
-			if (this.maxChars > 0) {
+			if (~/(iPad|iPhone|iPod)/g.match (Browser.window.navigator.userAgent)) {
 				
-				__hiddenInput.maxLength = this.maxChars;
+				__hiddenInput.style.fontSize = "0px";
+				
+			}
+			
+			untyped (__hiddenInput.style).pointerEvents = 'none';
+			
+			// TODO: Position for mobile browsers better
+			
+			__hiddenInput.style.left = "0px";
+			__hiddenInput.style.top = "50%";
+			__hiddenInput.style.width = '1px';
+			__hiddenInput.style.height = '1px';
+			__hiddenInput.style.zIndex = "-10000000";
+			
+			if (maxChars > 0) {
+				
+				__hiddenInput.maxLength = maxChars;
 				
 			}
 			
@@ -1008,7 +1021,7 @@ class TextField extends InteractiveObject {
 		font += "normal ";
 		font += format.bold ? "bold " : "normal ";
 		font += format.size + "px";
-		font += "/" + (format.size + format.leading + 4) + "px ";
+		font += "/" + (format.size + format.leading) + "px ";
 		
 		font += "'" + switch (format.font) {
 			
@@ -1405,7 +1418,7 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private function __measureText (condense:Bool=true):Array<Float> {
 		
-		#if js
+		#if (js && html5)
 		
 		if (__context == null) {
 			
@@ -1434,7 +1447,7 @@ class TextField extends InteractiveObject {
 			
 		}
 		
-		#elseif (cpp || neko)
+		#elseif (cpp || neko || nodejs)
 		
 		//the "condense" flag, if true, will return the widths of individual text format ranges, if false will return the widths of each character
 		//TODO: look into whether this method and others can replace the JS stuff yet or not
@@ -1548,7 +1561,7 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private function __measureTextWithDOM ():Void {
 	 	
-	 	#if js
+	 	#if (js && html5)
 	 	
 		var div:Element = __div;
 		
@@ -1557,6 +1570,7 @@ class TextField extends InteractiveObject {
 			div = cast Browser.document.createElement ("div");
 			div.innerHTML = new EReg ("\n", "g").replace (__text, "<br>");
 			div.style.setProperty ("font", __getFont (__textFormat), null);
+			div.style.setProperty ("pointer-events", "none", null);
 			div.style.position = "absolute";
 			div.style.top = "110%"; // position off-screen!
 			Browser.document.body.appendChild (div);
@@ -1569,7 +1583,7 @@ class TextField extends InteractiveObject {
 		// function of the flow within the width bounds...
 		if (__div == null) {
 			
-			div.style.width = Std.string (__width) + "px";
+			div.style.width = Std.string (__width - 4) + "px";
 			
 		}
 		
@@ -1687,17 +1701,6 @@ class TextField extends InteractiveObject {
 	}
 	
 	
-	@:noCompletion private function stage_onFocusOut (event:Event):Void {
-		
-		__cursorPosition = -1;
-		__hasFocus = false;
-		__stopCursorTimer ();
-		__hiddenInput.blur ();
-		__dirty = true;
-		
-	}
-	
-	
 	@:noCompletion private function stage_onMouseMove (event:MouseEvent) {
 		
 		if (__hasFocus && __selectionStart >= 0) {
@@ -1712,20 +1715,49 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private function stage_onMouseUp (event:MouseEvent):Void {
 		
-		var upPos:Int = __getPosition (event.localX, event.localY);
-		var leftPos:Int;
-		var rightPos:Int;
-		
-		leftPos = Std.int (Math.min (__selectionStart, upPos));
-		rightPos = Std.int (Math.max (__selectionStart, upPos));
-		
-		__selectionStart = leftPos;
-		__cursorPosition = rightPos;
-		
 		stage.removeEventListener (MouseEvent.MOUSE_MOVE, stage_onMouseMove);
-		stage.addEventListener (MouseEvent.MOUSE_UP, stage_onMouseUp);
+		stage.removeEventListener (MouseEvent.MOUSE_UP, stage_onMouseUp);
 		
-		stage.focus = this;
+		if (stage.focus == this) {
+			
+			var upPos:Int = __getPosition (event.localX, event.localY);
+			var leftPos:Int;
+			var rightPos:Int;
+			
+			leftPos = Std.int (Math.min (__selectionStart, upPos));
+			rightPos = Std.int (Math.max (__selectionStart, upPos));
+			
+			__selectionStart = leftPos;
+			__cursorPosition = rightPos;
+			
+			this_onFocusIn (null);
+			
+		}
+		
+	}
+	
+	
+	@:noCompletion private function this_onAddedToStage (event:Event):Void {
+		
+		addEventListener (FocusEvent.FOCUS_IN, this_onFocusIn);
+		addEventListener (FocusEvent.FOCUS_OUT, this_onFocusOut);
+		
+		__hiddenInput.addEventListener ('keydown', input_onKeyDown);
+		__hiddenInput.addEventListener ('keyup', input_onKeyUp);
+		__hiddenInput.addEventListener ('input', input_onKeyUp);
+		
+		addEventListener (MouseEvent.MOUSE_DOWN, this_onMouseDown);
+		
+		if (stage.focus == this) {
+			
+			this_onFocusIn (null);
+			
+		}
+		
+	}
+	
+	
+	@:noCompletion private function this_onFocusIn (event:Event):Void {
 		
 		if (__cursorPosition < 0) {
 			
@@ -1744,18 +1776,18 @@ class TextField extends InteractiveObject {
 		__hasFocus = true;
 		__dirty = true;
 		
+		stage.addEventListener (MouseEvent.MOUSE_UP, stage_onMouseUp);
+		
 	}
 	
 	
-	@:noCompletion private function this_onAddedToStage (event:Event):Void {
+	@:noCompletion private function this_onFocusOut (event:Event):Void {
 		
-		stage.addEventListener (FocusEvent.FOCUS_OUT, stage_onFocusOut);
-		
-		__hiddenInput.addEventListener ('keydown', input_onKeyDown);
-		__hiddenInput.addEventListener ('keyup', input_onKeyUp);
-		__hiddenInput.addEventListener ('input', input_onKeyUp);
-		
-		addEventListener (MouseEvent.MOUSE_DOWN, this_onMouseDown);
+		__cursorPosition = -1;
+		__hasFocus = false;
+		__stopCursorTimer ();
+		if (__hiddenInput != null) __hiddenInput.blur ();
+		__dirty = true;
 		
 	}
 	
@@ -1772,7 +1804,10 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private function this_onRemovedFromStage (event:Event):Void {
 		
-		if (stage != null) stage.removeEventListener (FocusEvent.FOCUS_OUT, stage_onFocusOut);
+		removeEventListener (FocusEvent.FOCUS_IN, this_onFocusIn);
+		removeEventListener (FocusEvent.FOCUS_OUT, this_onFocusOut);
+		
+		this_onFocusOut (null);
 		
 		if (__hiddenInput != null) __hiddenInput.removeEventListener ('keydown', input_onKeyDown);
 		if (__hiddenInput != null) __hiddenInput.removeEventListener ('keyup', input_onKeyUp);
@@ -2067,7 +2102,7 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion public function get_textWidth ():Float {
 		
-		#if js
+		#if (js && html5)
 		
 		if (__canvas != null) {
 			
@@ -2093,7 +2128,7 @@ class TextField extends InteractiveObject {
 			
 		}
 		
-		#elseif (cpp || neko)
+		#elseif (cpp || neko || nodejs)
 		
 		//return the largest width of any given single line
 		//TODO: need to check actual left/right bounding volume in case of pathological cases (multiple format ranges for instance)
@@ -2110,7 +2145,7 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion public function get_textHeight ():Float {
 		
-		#if js
+		#if (js && html5)
 		
 		if (__canvas != null) {
 			

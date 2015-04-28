@@ -287,21 +287,13 @@ class DisplayObjectContainer extends InteractiveObject {
 	 */
 	public function contains (child:DisplayObject):Bool {
 		
-		#if (haxe_ver > 3.100)
-		
-		return __children.indexOf (child) > -1;
-		
-		#else
-		
-		for (i in __children) {
+		while (child != this && child != null) {
 			
-			if (i == child) return true;
+			child = child.parent;
 			
 		}
 		
-		return false;
-		
-		#end
+		return child == this;
 		
 	}
 	
@@ -786,7 +778,7 @@ class DisplayObjectContainer extends InteractiveObject {
 		
 		if (scrollRect != null) {
 			
-			//renderSession.maskManager.pushRect (scrollRect, __worldTransform);
+			renderSession.maskManager.pushRect (scrollRect, __worldTransform);
 			
 		}
 		
@@ -812,7 +804,7 @@ class DisplayObjectContainer extends InteractiveObject {
 		
 		if (scrollRect != null) {
 			
-			//renderSession.maskManager.popMask ();
+			renderSession.maskManager.popMask ();
 			
 		}
 		
