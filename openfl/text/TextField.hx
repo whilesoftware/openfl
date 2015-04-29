@@ -478,7 +478,7 @@ class TextField extends InteractiveObject {
 	 * 
 	 * @default true
 	 */
-	public var selectable:Bool;
+	public var selectable (default, set):Bool;
 	
 	/**
 	 * The zero-based character index value of the first character in the current
@@ -569,6 +569,7 @@ class TextField extends InteractiveObject {
 	@:noCompletion private var __measuredHeight:Int;
 	@:noCompletion private var __measuredWidth:Int;
 	@:noCompletion private var __ranges:Array<TextFormatRange>;
+	@:noCompletion private var __selectable:Bool;
 	@:noCompletion private var __selectionStart:Int;
 	@:noCompletion private var __showCursor:Bool;
 	@:noCompletion private var __text:String;
@@ -923,20 +924,25 @@ class TextField extends InteractiveObject {
 			__hiddenInput.style.opacity = "0";
 			__hiddenInput.style.color = "transparent";
 			
-			if (~/(iPad|iPhone|iPod)/g.match (Browser.window.navigator.userAgent)) {
-				
-				__hiddenInput.style.fontSize = "0px";
-				
-			}
-			
-			untyped (__hiddenInput.style).pointerEvents = 'none';
-			
 			// TODO: Position for mobile browsers better
 			
 			__hiddenInput.style.left = "0px";
 			__hiddenInput.style.top = "50%";
-			__hiddenInput.style.width = '1px';
-			__hiddenInput.style.height = '1px';
+			
+			if (~/(iPad|iPhone|iPod).*OS 8_/gi.match (Browser.window.navigator.userAgent)) {
+				
+				__hiddenInput.style.fontSize = "0px";
+				__hiddenInput.style.width = '0px';
+				__hiddenInput.style.height = '0px';
+				
+			} else {
+				
+				__hiddenInput.style.width = '1px';
+				__hiddenInput.style.height = '1px';
+				
+			}
+			
+			untyped (__hiddenInput.style).pointerEvents = 'none';
 			__hiddenInput.style.zIndex = "-10000000";
 			
 			if (maxChars > 0) {
@@ -1010,7 +1016,7 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private override function __getCursor ():MouseCursor {
 		
-		return type == INPUT ? TEXT : null;
+		return (type == INPUT && selectable) ? TEXT : null;
 		
 	}
 	
@@ -1794,6 +1800,8 @@ class TextField extends InteractiveObject {
 	
 	@:noCompletion private function this_onMouseDown (event:MouseEvent):Void {
 		
+		if (!selectable) return;
+		
 		__selectionStart = __getPosition (event.localX, event.localY);
 		
 		stage.addEventListener (MouseEvent.MOUSE_MOVE, stage_onMouseMove);
@@ -2051,7 +2059,22 @@ class TextField extends InteractiveObject {
 	}
 	
 	
-	@:noCompletion public function get_text ():String {
+	@:noCompletion private function set_selectable (value:Bool):Bool {
+		
+		#if (js && html5)
+		if (!value && selectable && type == TextFieldType.INPUT) {
+			
+			this_onRemovedFromStage (null);
+			
+		}
+		#end
+		
+		return selectable = value;
+		
+	}
+	
+	
+	@:noCompletion private function get_text ():String {
 		
 		if (__isHTML) {
 			
@@ -2064,7 +2087,7 @@ class TextField extends InteractiveObject {
 	}
 	
 	
-	@:noCompletion public function set_text (value:String):String {
+	@:noCompletion private function set_text (value:String):String {
 		
 		#if (js && html5) if (__text != value && __hiddenInput != null) __hiddenInput.value = value; #end
 		if (__isHTML || __text != value) __dirty = true;
