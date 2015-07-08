@@ -1,6 +1,7 @@
 package openfl.display; #if !flash #if !openfl_legacy
 
 
+import lime.graphics.cairo.Cairo;
 import openfl._internal.renderer.opengl.utils.FilterTexture;
 import openfl.errors.ArgumentError;
 import openfl._internal.renderer.opengl.utils.GraphicsRenderer;
@@ -9,6 +10,7 @@ import openfl.display.GraphicsPathCommand;
 import openfl.display.Tilesheet;
 import openfl.geom.Matrix;
 import openfl.geom.Point;
+import lime.graphics.Image;
 import openfl.geom.Rectangle;
 import openfl.Vector;
 
@@ -45,12 +47,14 @@ class Graphics {
 	public static inline var TILE_BLEND_NORMAL = 0x00000000;
 	public static inline var TILE_BLEND_ADD = 0x00010000;
 	
+	@:noCompletion public var __hardware:Bool;
 	@:noCompletion private var __bounds:Rectangle;
 	@:noCompletion private var __commands:Array<DrawCommand> = [];
 	@:noCompletion private var __dirty(default, set):Bool = true;
 	@:noCompletion private var __glStack:Array<GLStack> = [];
 	@:noCompletion private var __drawPaths:Array<DrawPath>;
 	@:noCompletion private var __halfStrokeWidth:Float;
+	@:noCompletion private var __image:Image;
 	@:noCompletion private var __positionX:Float;
 	@:noCompletion private var __positionY:Float;
 	@:noCompletion private var __transformDirty:Bool;
@@ -61,15 +65,19 @@ class Graphics {
 	#if (js && html5)
 	@:noCompletion private var __canvas:CanvasElement;
 	@:noCompletion private var __context:CanvasRenderingContext2D;
+	#else
+	@:noCompletion private var __cairo:Cairo;
 	#end
 	
-	
+	@:noCompletion private var __bitmap:BitmapData;
+
 	public function new () {
 		
 		__commands = new Array ();
 		__halfStrokeWidth = 0;
 		__positionX = 0;
 		__positionY = 0;
+		__hardware = true;
 		
 		#if (js && html5)
 		moveTo( 0, 0);
@@ -214,6 +222,7 @@ class Graphics {
 	public function beginGradientFill (type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix = null, spreadMethod:Null<SpreadMethod> = null, interpolationMethod:Null<InterpolationMethod> = null, focalPointRatio:Null<Float> = null):Void {
 		
 		__commands.push (BeginGradientFill (type, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio));
+		__hardware = false;
 		
 		for (alpha in alphas) {
 			
@@ -248,6 +257,7 @@ class Graphics {
 		}
 		
 		__visible = false;
+		__hardware = true;
 		
 		#if (js && html5)
 		moveTo( 0, 0);
@@ -274,19 +284,58 @@ class Graphics {
 		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
 		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
 		
-		// TODO: Is this the right calculation for bounds?
+		// Calculate the bounds of the bezier function 
+		var ix1, iy1, ix2, iy2;
 		
-		__inflateBounds (controlX1, controlY1);
-		__inflateBounds (controlX2, controlY2);
+		ix1 = anchorX;
+		ix2 = anchorX;
+		
+		if ( !( ( (controlX1 < anchorX && controlX1 > __positionX) || (controlX1 > anchorX && controlX1 < __positionX) ) && ( (controlX2 < anchorX && controlX2 > __positionX) || (controlX2 > anchorX && controlX2 < __positionX) ) ) )
+		{
+			var u = (2 * __positionX - 4 * controlX1 + 2 * controlX2 );
+			var v = (controlX1 - __positionX);
+			var w = ( -__positionX + 3 * controlX1 + anchorX - 3 * controlX2 );
+			
+			var t1 = ( -u + Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			var t2 = ( -u - Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			
+			if ( t1 > 0 && t1 < 1 )
+				ix1 = __calculateBezierCubicPoint( t1, __positionX, controlX1, controlX2, anchorX );
+			
+			if( t2 > 0 && t2 < 1 )
+				ix2 = __calculateBezierCubicPoint( t2, __positionX, controlX1, controlX2, anchorX );
+		}
+		
+		iy1 = anchorY;
+		iy2 = anchorY;
+		
+		if ( !( ( (controlY1 < anchorY && controlY1 > __positionX) || (controlY1 > anchorY && controlY1 < __positionX) ) && ( (controlY2 < anchorY && controlY2 > __positionX) || (controlY2 > anchorY && controlY2 < __positionX) ) ) )
+		{
+			var u = (2 * __positionX - 4 * controlY1 + 2 * controlY2 );
+			var v = (controlY1 - __positionX);
+			var w = ( -__positionX + 3 * controlY1 + anchorY - 3 * controlY2 );
+			
+			var t1 = ( -u + Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			var t2 = ( -u - Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			
+			if ( t1 > 0 && t1 < 1 )
+				iy1 = __calculateBezierCubicPoint( t1, __positionX, controlY1, controlY2, anchorY );
+			
+			if( t2 > 0 && t2 < 1 )
+				iy2 = __calculateBezierCubicPoint( t2, __positionX, controlY1, controlY2, anchorY );
+		}
+
+		__inflateBounds (ix1 - __halfStrokeWidth, iy1 - __halfStrokeWidth);
+		__inflateBounds (ix1 + __halfStrokeWidth, iy1 + __halfStrokeWidth);
+		__inflateBounds (ix2 - __halfStrokeWidth, iy2 - __halfStrokeWidth);
+		__inflateBounds (ix2 + __halfStrokeWidth, iy2 + __halfStrokeWidth);
 		
 		__positionX = anchorX;
 		__positionY = anchorY;
 		
-		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
-		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
-		
 		__commands.push (CubicCurveTo (controlX1, controlY1, controlX2, controlY2, anchorX, anchorY));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
@@ -327,22 +376,41 @@ class Graphics {
 		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
 		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
 		
-		// TODO: Be a little less lenient in canvas size?
+		// Calculate the bounds of the bezier function 
+		var ix, iy;
 		
-		__inflateBounds (controlX, controlY);
+		if ( (controlX < anchorX && controlX > __positionX) || (controlX > anchorX && controlX < __positionX) )
+		{
+			ix = anchorX;
+		}
+		else
+		{
+			var tx = ((__positionX - controlX) / (__positionX - 2 * controlX + anchorX));
+			ix = __calculateBezierQuadPoint( tx, __positionX, controlX, anchorX );
+		}
+		
+		if ( (controlY < anchorY && controlY > __positionY) || (controlY > anchorY && controlY < __positionY) )
+		{
+			iy = anchorY;
+		}
+		else
+		{
+			var ty = ((__positionY - controlY) / (__positionY - 2*controlY + anchorY));
+			iy = __calculateBezierQuadPoint( ty, __positionY, controlY, anchorY );
+		}
+		
+		__inflateBounds (ix - __halfStrokeWidth, iy - __halfStrokeWidth);
+		__inflateBounds (ix + __halfStrokeWidth, iy + __halfStrokeWidth);
 		
 		__positionX = anchorX;
 		__positionY = anchorY;
 		
-		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
-		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
-		
 		__commands.push (CurveTo (controlX, controlY, anchorX, anchorY));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
-	
 	
 	/**
 	 * Draws a circle. Set the line style, fill, or both before you call the
@@ -368,6 +436,7 @@ class Graphics {
 		
 		__commands.push (DrawCircle (x, y, radius));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
@@ -398,6 +467,7 @@ class Graphics {
 		
 		__commands.push (DrawEllipse (x, y, width, height));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
@@ -570,6 +640,7 @@ class Graphics {
 		
 		__commands.push (DrawRoundRect (x, y, width, height, rx, ry));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
@@ -640,7 +711,7 @@ class Graphics {
 		var tmpx = Math.NEGATIVE_INFINITY;
 		var tmpy = Math.NEGATIVE_INFINITY;
 		var maxX = Math.NEGATIVE_INFINITY;
-		var maxY = Math.NEGATIVE_INFINITY;		
+		var maxY = Math.NEGATIVE_INFINITY;
 		
 		for (i in 0...vlen) {
 			tmpx = vertices[i * 2];
@@ -706,7 +777,7 @@ class Graphics {
 	 */
 	public function lineBitmapStyle (bitmap:BitmapData, matrix:Matrix = null, repeat:Bool = true, smooth:Bool = false):Void {
 		
-		openfl.Lib.notImplemented ("Graphics.lineBitmapStyle");
+		__commands.push (LineBitmapStyle (bitmap, matrix != null ? matrix.clone () : null, repeat, smooth));
 		
 	}
 	
@@ -765,7 +836,7 @@ class Graphics {
 	 */
 	public function lineGradientStyle (type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix = null, spreadMethod:SpreadMethod = null, interpolationMethod:InterpolationMethod = null, focalPointRatio:Null<Float> = null):Void {
 		
-		openfl.Lib.notImplemented ("Graphics.lineGradientStyle");
+		__commands.push (LineGradientStyle (type, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio));	
 		
 	}
 	
@@ -911,7 +982,7 @@ class Graphics {
 	 */
 	public function lineStyle (thickness:Null<Float> = null, color:Null<Int> = null, alpha:Null<Float> = null, pixelHinting:Null<Bool> = null, scaleMode:LineScaleMode = null, caps:CapsStyle = null, joints:JointStyle = null, miterLimit:Null<Float> = null):Void {
 		
-		__halfStrokeWidth = thickness > __halfStrokeWidth ? thickness : __halfStrokeWidth;
+		__halfStrokeWidth = thickness > __halfStrokeWidth ? thickness/2 : __halfStrokeWidth;
 		__commands.push (LineStyle (thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit));
 		
 		if (thickness != null) __visible = true;
@@ -950,6 +1021,7 @@ class Graphics {
 		
 		__commands.push (LineTo (x, y));
 		
+		__hardware = false;
 		__dirty = true;
 		
 	}
@@ -974,12 +1046,21 @@ class Graphics {
 		
 	}
 	
+	@:noCompletion private function __calculateBezierQuadPoint( t:Float, p1:Float, p2:Float, p3:Float ) {
+		var iT = 1 - t;
+		return iT * iT * p1 + 2 * iT * t * p2 + t * t * p3;
+	}
+	
+	@:noCompletion private function __calculateBezierCubicPoint( t:Float, p1:Float, p2:Float, p3:Float, p4:Float ) {
+		var iT = 1 - t;
+		return p1 * (iT * iT * iT) + 3 * p2 * t * (iT * iT) + 3 * p3 * iT * ( t * t ) + p4 * ( t * t * t );
+	}
 	
 	@:noCompletion private function __getBounds (rect:Rectangle, matrix:Matrix):Void {
 		
 		if (__bounds == null) return;
 		
-		var bounds = __bounds.clone ().transform (matrix);
+		var bounds = __bounds.transform (matrix);
 		rect.__expand (bounds.x, bounds.y, bounds.width, bounds.height);
 		
 	}
@@ -991,11 +1072,10 @@ class Graphics {
 		
 		if (__bounds == null) return false;
 		
-		var bounds = __bounds.clone ().transform (matrix);
+		var bounds = __bounds.transform (matrix);
 		return (x > bounds.x && y > bounds.y && x <= bounds.right && y <= bounds.bottom);
 		
 	}
-	
 	
 	@:noCompletion private function __inflateBounds (x:Float, y:Float):Void {
 		
@@ -1064,6 +1144,8 @@ class Graphics {
 	DrawTriangles (vertices:Vector<Float>, indices:Vector<Int>, uvtData:Vector<Float>, culling:TriangleCulling, colors:Vector<Int>, blendMode:Int);
 	EndFill;
 	LineStyle (thickness:Null<Float>, color:Null<Int>, alpha:Null<Float>, pixelHinting:Null<Bool>, scaleMode:LineScaleMode, caps:CapsStyle, joints:JointStyle, miterLimit:Null<Float>);
+	LineBitmapStyle (bitmap:BitmapData, matrix:Matrix, repeat:Bool, smooth:Bool);
+	LineGradientStyle (type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix, spreadMethod:Null<SpreadMethod>, interpolationMethod:Null<InterpolationMethod>, focalPointRatio:Null<Float>);
 	LineTo (x:Float, y:Float);
 	MoveTo (x:Float, y:Float);
 	DrawPathC(commands:Vector<Int>, data:Vector<Float>, winding:GraphicsPathWinding);

@@ -4,6 +4,7 @@ package openfl._internal.renderer;
 import lime.graphics.Image;
 import lime.text.Glyph;
 import lime.text.TextLayout;
+import openfl._internal.renderer.cairo.CairoTextField;
 import openfl._internal.renderer.RenderSession;
 import openfl.display.BitmapData;
 import openfl.display.Graphics;
@@ -30,7 +31,9 @@ class TextFieldGraphics {
 	
 	public static function render (textField:TextField) {
 		
-		update (textField);
+		var bounds = textField.getBounds( null );
+		
+		update (textField, bounds);
 		
 		if (textField.__graphics == null) {
 			
@@ -55,7 +58,7 @@ class TextFieldGraphics {
 				
 			}
 			
-			graphics.drawRect (0.5, 0.5, textField.__width - 1, textField.__height - 1);
+			graphics.drawRect (bounds.x + 0.5, bounds.y+0.5, bounds.width - 1, bounds.height - 1);
 			
 		}
 		
@@ -72,9 +75,9 @@ class TextFieldGraphics {
 	}
 	
 	
-	private static inline function renderText (textField:TextField, text:String, format:TextFormat, offsetX:Float, textWidth:Float):Void {
+	private static inline function renderText (textField:TextField, text:String, format:TextFormat, offsetX:Float, bounds:Rectangle):Void {
 		
-		var font = textField.__getFontInstance (format);
+		var font = CairoTextField.getFontInstance (format);
 		
 		if (font != null && format.size != null) {
 			
@@ -268,7 +271,7 @@ class TextFieldGraphics {
 	}
 	
 	
-	public static function update (textField:TextField):Bool {
+	public static function update (textField:TextField, bounds:Rectangle):Bool {
 		
 		if (textField.__dirty) {
 			
@@ -309,25 +312,11 @@ class TextFieldGraphics {
 						
 					}
 					
-					var measurements = textField.__measureText ();
-					var textWidth = 0.0;
-					
-					for (measurement in measurements) {
-						
-						textWidth += measurement;
-						
-					}
-					
-					if (textField.autoSize == TextFieldAutoSize.LEFT) {
-						
-						textField.__width = textWidth + 4;
-						textField.__height = textField.textHeight + 4;
-						
-					}
+					var measurements = CairoTextField.measureText (textField);
 					
 					if (textField.__ranges == null) {
 						
-						renderText (textField, text, textField.__textFormat, 2, textWidth);
+						renderText (textField, text, textField.__textFormat, 2, bounds );
 						
 					} else {
 						
@@ -339,19 +328,10 @@ class TextFieldGraphics {
 							
 							range = textField.__ranges[i];
 							
-							renderText (textField, text.substring (range.start, range.end), range.format, offsetX, textWidth);
+							renderText (textField, text.substring (range.start, range.end), range.format, offsetX, bounds );
 							offsetX += measurements[i];
 							
 						}
-						
-					}
-					
-				} else {
-					
-					if (textField.autoSize == TextFieldAutoSize.LEFT) {
-						
-						textField.__width = 4;
-						textField.__height = 4;
 						
 					}
 					

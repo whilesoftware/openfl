@@ -149,7 +149,7 @@ class Sound extends EventDispatcher {
 	/**
 	 * The length of the current sound in milliseconds.
 	 */
-	public var length (default, null):Float;
+	public var length (get, never):Float;
 	
 	/**
 	 * The URL from which this sound was loaded. This property is applicable only
@@ -218,7 +218,6 @@ class Sound extends EventDispatcher {
 		bytesTotal = 0;
 		id3 = null;
 		isBuffering = false;
-		length = 0;
 		url = null;
 		
 		if (stream != null) {
@@ -421,20 +420,21 @@ class Sound extends EventDispatcher {
 	 */
 	public function play (startTime:Float = 0.0, loops:Int = 0, sndTransform:SoundTransform = null):SoundChannel {
 		
+		// TODO: handle pan
+		
+		#if !html5
+		var source = new AudioSource (__buffer);
+		source.offset = Std.int (startTime * 1000);
+		if (loops > 1) source.loops = loops - 1;
+		if (sndTransform != null) source.gain = sndTransform.volume;
+		return new SoundChannel (source);
+		#else
 		if (sndTransform == null) {
 			
 			sndTransform = new SoundTransform (1, 0);
 			
 		}
 		
-		// TODO: handle start time, loops, sound transform
-		
-		#if !html5
-		var source = new AudioSource (__buffer);
-		source.offset = Std.int (startTime * 1000);
-		if (loops > 1) source.loops = loops - 1;
-		return new SoundChannel (source);
-		#else
 		var instance = 
 		if (loops > 1)
 			SoundJS.play (__soundID, SoundJS.INTERRUPT_ANY, 0, Std.int (startTime), loops - 1, sndTransform.volume, sndTransform.pan);
@@ -470,6 +470,28 @@ class Sound extends EventDispatcher {
 	@:noCompletion private function get_id3 ():ID3Info {
 		
 		return new ID3Info ();
+		
+	}
+	
+	
+	@:noCompletion private function get_length ():Int {
+		
+		if (__buffer != null) {
+			
+			#if flash
+			
+			return Std.int (__buffer.src.length);
+			
+			#elseif !html5
+			
+			var samples = (__buffer.data.length * 8) / (__buffer.channels * __buffer.bitsPerSample);
+			return Std.int (samples / __buffer.sampleRate * 1000);
+			
+			#end
+			
+		}
+		
+		return 0;
 		
 	}
 	

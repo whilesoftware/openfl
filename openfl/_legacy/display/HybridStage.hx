@@ -93,7 +93,7 @@ class HybridStage extends ManagedStage implements IModule {
 		if (modifier.altKey) flags |= ManagedStage.efAltDown;
 		if (modifier.metaKey) flags |= ManagedStage.efCommandDown;
 		
-		var value = Keyboard.convertKeyCode (keyCode);
+		var value = Keyboard.__convertKeyCode (keyCode);
 		var code = Keyboard.__getCharCode (value, modifier.shiftKey);
 		
 		pumpEvent ( { type: ManagedStage.etKeyDown, value: value, code: code, flags: flags } );
@@ -109,7 +109,7 @@ class HybridStage extends ManagedStage implements IModule {
 		if (modifier.altKey) flags |= ManagedStage.efAltDown;
 		if (modifier.metaKey) flags |= ManagedStage.efCommandDown;
 		
-		var value = Keyboard.convertKeyCode (keyCode);
+		var value = Keyboard.__convertKeyCode (keyCode);
 		var code = Keyboard.__getCharCode (value, modifier.shiftKey);
 		
 		pumpEvent ( { type: ManagedStage.etKeyUp, value: value, code: code, flags: flags } );
@@ -186,6 +186,20 @@ class HybridStage extends ManagedStage implements IModule {
 	public function onRenderContextRestored (context:RenderContext):Void {
 		
 		pumpEvent ( { type: ManagedStage.etRenderContextRestored } );
+		
+	}
+	
+	
+	public function onTextEdit (text:String, start:Int, length:Int):Void {
+		
+		
+		
+	}
+	
+	
+	public function onTextInput (text:String):Void {
+		
+		
 		
 	}
 	

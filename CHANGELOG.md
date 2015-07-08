@@ -1,3 +1,90 @@
+3.1.1 (07/02/2015)
+------------------
+
+* Improved the behavior of EventDispatcher
+* Changed relevant TextFormat values to be Int, not Float
+* Improved support for TextField leading values
+* Improved multi-touch support on desktop targets
+* Improved support for using NEAREST filter mode in Stage3D
+* Fixed rendering when TextField autoSize increases the width
+* Fixed some issues that occurred with too-large alpha values
+* Fixed support for sound.length on native targets
+* Fixed support for keyboardEvent.keyLocation
+
+
+3.1.0 (06/08/2015)
+------------------
+
+* Enabled Cairo graphics in GL mode by default
+* Added initial hooks for Haxe telemetry (hxscout)
+* Fixed bug in image premultiplication
+* Fixed black textures when mixing Cairo with OpenGL
+* Fixed crash in HTML5 when using sparse graphics
+
+
+3.0.8 (05/31/2015)
+------------------
+
+* Guard hybrid Cairo + GL behavior behind #if cairo_graphics for now
+
+
+3.0.7 (05/30/2015)
+------------------
+
+* Added hybrid Cairo + GL renderer support for native
+* Switched to use canvas graphics when targeting WebGL/HTML5
+* Many improvements to the Cairo renderer, improved canvas rendering
+* Improved GL blend mode support
+* Improved support for scrollRect
+* Added stage focus in and out events
+* Added an initial implementation of the GameInput API
+* Improved the behavior of event.target
+* Improved add/remove event listener behavior when dispatching
+* Improved bounds check for bezier curves
+* Improved the behavior of mouse event buttonDown
+* Initial re-implementation of URLLoader for native 
+* Added handling for Lime application.frameRate
+* Fixed SystemPath (legacy)
+
+
+3.0.6 (05/14/2015)
+------------------
+
+* Fix regression in event dispatch behavior
+
+
+3.0.5 (05/13/2015)
+------------------
+
+* Improved formatting for thrown errors on HTML5
+* Separated the behavior of event preventDefault from stopPropagation
+* Fixed the event dispatch order for DisplayObjectContainer
+* Fixed support for -Dhybrid using latest Lime release
+
+
+3.0.4 (05/12/2015)
+------------------
+
+* Improved accuracy of HTML5 canvas Graphics renderer
+* Added support for window hardware=false
+* Added initial Cairo renderer support
+* Made big improvements to HTML5 canvas TextField input
+* Added MouseEvent.MOUSE_LEAVE event support
+* Improved HTML5 canvas linear gradient support
+* Improved Stage3D texture uploads
+* Implemented BitmapData.getColorBoundsRect
+* Improved checks for invalid BitmapData in Assets
+* Improved beginBitmapFill for GL Graphics
+* Improved pixel snapping support for GL rendering
+* Improved cleanup of native sound channels
+* Improved compatibility between Stage3D and internal GL rendering
+* Fixed HTML5 canvas scrollRect
+* Fixed handling of embedded fonts in some cases
+* Fixed some issues with bounds calculations
+* Fixed support for initial SoundTransform volume on native
+* Improved non-blocking HTTPS support (legacy)
+
+
 3.0.3 (04/21/2015)
 ------------------
 
