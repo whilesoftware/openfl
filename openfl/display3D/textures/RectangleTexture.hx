@@ -9,7 +9,7 @@ import openfl.utils.ByteArray;
 import openfl.utils.UInt8Array;
 
 
-class RectangleTexture extends TextureBase {
+@:final class RectangleTexture extends TextureBase {
 	
 	
 	public var optimizeForRenderToTexture:Bool;
@@ -50,9 +50,9 @@ class RectangleTexture extends TextureBase {
 		#if openfl_legacy
 		var p = BitmapData.getRGBAPixels (bitmapData);
 		#elseif js
-		var p = ByteArray.__ofBuffer (@:privateAccess (bitmapData.__image).data.buffer);
+		var p = ByteArray.__ofBuffer (bitmapData.image.data.buffer);
 		#else
-		var p = ByteArray.fromBytes (@:privateAccess (bitmapData.__image).data.buffer);
+		var p = ByteArray.fromBytes (bitmapData.image.data.buffer);
 		#end
 		
 		width = bitmapData.width;

@@ -10,7 +10,7 @@ import openfl.utils.UInt8Array;
 using openfl.display.BitmapData;
 
 
-class CubeTexture extends TextureBase {
+@:final class CubeTexture extends TextureBase {
 	
 	
 	public var size : Int;
@@ -54,7 +54,7 @@ class CubeTexture extends TextureBase {
 		#if openfl_legacy
 		var source = new UInt8Array (BitmapData.getRGBAPixels (bitmapData));
 		#else
-		var source = @:privateAccess (bitmapData.__image).data;
+		var source = bitmapData.image.data;
 		#end
 		
 		GL.bindTexture (GL.TEXTURE_CUBE_MAP, glTexture);

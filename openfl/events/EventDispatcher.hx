@@ -253,90 +253,17 @@ class EventDispatcher implements IEventDispatcher {
 	 */
 	public function dispatchEvent (event:Event):Bool {
 		
-		if (__eventMap == null || event == null) return false;
-		
-		var type = event.type;
-		
-		var list = __eventMap.get (type);
-		if (list == null) return false;
-		
-		__dispatching.set (type, true);
-		
-		if (event.target == null) {
+		if (__targetDispatcher != null) {
 			
-			if (__targetDispatcher != null) {
-				
-				event.target = __targetDispatcher;
-				
-			} else {
-				
-				event.target = this;
-				
-			}
+			event.target = __targetDispatcher;
+			
+		} else {
+			
+			event.target = this;
 			
 		}
 		
-		event.currentTarget = this;
-		
-		var capture = (event.eventPhase == EventPhase.CAPTURING_PHASE);
-		var index = 0;
-		var listener;
-		
-		while (index < list.length) {
-			
-			listener = list[index];
-			
-			if (listener.useCapture == capture) {
-				
-				//listener.callback (event.clone ());
-				listener.callback (event);
-				
-				if (event.__isCancelledNow) {
-					
-					break;
-					
-				}
-				
-			}
-			
-			if (listener == list[index]) {
-				
-				index++;
-				
-			}
-			
-		}
-		
-		if (__newEventMap != null && __newEventMap.exists (type)) {
-			
-			var list = __newEventMap.get (type);
-			
-			if (list.length > 0) {
-				
-				__eventMap.set (type, list);
-				
-			} else {
-				
-				__eventMap.remove (type);
-				
-			}
-			
-			if (!__eventMap.iterator ().hasNext ()) {
-				
-				__eventMap = null;
-				__newEventMap = null;
-				
-			} else {
-				
-				__newEventMap.remove (type);
-				
-			}
-			
-		}
-		
-		__dispatching.set (event.type, false);
-		
-		return true;
+		return __dispatchEvent (event);
 		
 	}
 	
@@ -364,7 +291,16 @@ class EventDispatcher implements IEventDispatcher {
 	public function hasEventListener (type:String):Bool {
 		
 		if (__eventMap == null) return false;
-		return __eventMap.exists (type);
+		
+		if (__dispatching.get (type) == true && __newEventMap.exists (type)) {
+			
+			return __newEventMap.get (type).length > 0;
+			
+		} else {
+			
+			return __eventMap.exists (type);
+			
+		}
 		
 	}
 	
@@ -472,6 +408,106 @@ class EventDispatcher implements IEventDispatcher {
 	public function willTrigger (type:String):Bool {
 		
 		return hasEventListener (type);
+		
+	}
+	
+	
+	@:noCompletion private function __dispatchEvent (event:Event):Bool {
+		
+		if (__eventMap == null || event == null) return false;
+		
+		var type = event.type;
+		var list;
+		
+		if (__dispatching.get (type) == true) {
+			
+			list = __newEventMap.get (type);
+			if (list == null) return false;
+			list = list.copy ();
+			
+		} else {
+			
+			list = __eventMap.get (type);
+			if (list == null) return false;
+			__dispatching.set (type, true);
+			
+		}
+		
+		if (event.target == null) {
+			
+			if (__targetDispatcher != null) {
+				
+				event.target = __targetDispatcher;
+				
+			} else {
+				
+				event.target = this;
+				
+			}
+			
+		}
+		
+		event.currentTarget = this;
+		
+		var capture = (event.eventPhase == EventPhase.CAPTURING_PHASE);
+		var index = 0;
+		var listener;
+		
+		while (index < list.length) {
+			
+			listener = list[index];
+			
+			if (listener.useCapture == capture) {
+				
+				//listener.callback (event.clone ());
+				listener.callback (event);
+				
+				if (event.__isCancelledNow) {
+					
+					break;
+					
+				}
+				
+			}
+			
+			if (listener == list[index]) {
+				
+				index++;
+				
+			}
+			
+		}
+		
+		if (__newEventMap != null && __newEventMap.exists (type)) {
+			
+			var list = __newEventMap.get (type);
+			
+			if (list.length > 0) {
+				
+				__eventMap.set (type, list);
+				
+			} else {
+				
+				__eventMap.remove (type);
+				
+			}
+			
+			if (!__eventMap.iterator ().hasNext ()) {
+				
+				__eventMap = null;
+				__newEventMap = null;
+				
+			} else {
+				
+				__newEventMap.remove (type);
+				
+			}
+			
+		}
+		
+		__dispatching.set (event.type, false);
+		
+		return true;
 		
 	}
 	

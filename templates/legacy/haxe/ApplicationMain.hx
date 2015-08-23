@@ -19,6 +19,10 @@ class ApplicationMain {
 	private static var forceHeight:Int;
 	private static var forceWidth:Int;
 	
+	#if hxtelemetry
+	public static var telemetryConfig:hxtelemetry.HxTelemetry.Config;
+	#end
+	
 	
 	public static function main () {
 		
@@ -31,6 +35,13 @@ class ApplicationMain {
 			::elseif (WIN_ORIENTATION == "landscape")::return (orientation == flash.display.Stage.OrientationLandscapeLeft || orientation == flash.display.Stage.OrientationLandscapeRight);
 			::else::return true;::end::
 		}
+		#end
+		
+		#if hxtelemetry
+		telemetryConfig = new hxtelemetry.HxTelemetry.Config ();
+		telemetryConfig.allocations = ::if (config.hxtelemetry != null)::("::config.hxtelemetry.allocations::" == "true")::else::true::end::;
+		telemetryConfig.host = ::if (config.hxtelemetry != null)::"::config.hxtelemetry.host::"::else::"localhost"::end::;
+		telemetryConfig.app_name = "::APP_TITLE::";
 		#end
 		
 		::if (APP_INIT != null)::::APP_INIT::::end::
@@ -390,6 +401,7 @@ class ApplicationMain {
 #if !macro
 
 
+@:access(lime.app.Application)
 @:access(lime.Assets)
 
 
@@ -407,7 +419,7 @@ class ApplicationMain {
 		openfl.Lib.application = app;
 		
 		#if !flash
-		var stage = new openfl._legacy.display.HybridStage (app.window.width, app.window.height, config.background);
+		var stage = new openfl._legacy.display.HybridStage (app.window.width, app.window.height, app.window.config.background);
 		stage.addChild (openfl.Lib.current);
 		app.addModule (stage);
 		#end
@@ -415,7 +427,8 @@ class ApplicationMain {
 		var display = ::if (PRELOADER_NAME != "")::new ::PRELOADER_NAME:: ()::else::new NMEPreloader ()::end::;
 		
 		preloader = new openfl.display.Preloader (display);
-		preloader.onComplete = init;
+		app.setPreloader (preloader);
+		preloader.onComplete.add (init);
 		preloader.create (config);
 		
 		#if (js && html5)
@@ -482,7 +495,7 @@ class ApplicationMain {
 		openfl.Assets.loadLibrary ("::name::", library_onLoad);
 		::end::::end::::end::
 		
-		if (loaded == total) {
+		if (total == 0) {
 			
 			start ();
 			
@@ -495,25 +508,37 @@ class ApplicationMain {
 		
 		config = {
 			
-			antialiasing: Std.int (::WIN_ANTIALIASING::),
-			background: Std.int (::WIN_BACKGROUND::),
-			borderless: ::WIN_BORDERLESS::,
-			company: "::META_COMPANY::",
-			depthBuffer: ::WIN_DEPTH_BUFFER::,
+			build: "::meta.buildNumber::",
+			company: "::meta.company::",
 			file: "::APP_FILE::",
-			fps: Std.int (::WIN_FPS::),
-			fullscreen: ::WIN_FULLSCREEN::,
-			height: Std.int (::WIN_HEIGHT::),
+			fps: ::WIN_FPS::,
+			name: "::meta.title::",
 			orientation: "::WIN_ORIENTATION::",
-			packageName: "::META_PACKAGE_NAME::",
-			resizable: ::WIN_RESIZABLE::,
-			stencilBuffer: ::WIN_STENCIL_BUFFER::,
-			title: "::APP_TITLE::",
-			version: "::META_VERSION::",
-			vsync: ::WIN_VSYNC::,
-			width: Std.int (::WIN_WIDTH::),
+			packageName: "::meta.packageName::",
+			version: "::meta.version::",
+			windows: [
+				::foreach windows::
+				{
+					antialiasing: ::antialiasing::,
+					background: ::background::,
+					borderless: ::borderless::,
+					depthBuffer: ::depthBuffer::,
+					display: ::display::,
+					fullscreen: ::fullscreen::,
+					hardware: ::hardware::,
+					height: ::height::,
+					parameters: "::parameters::",
+					resizable: ::resizable::,
+					stencilBuffer: ::stencilBuffer::,
+					title: "::title::",
+					vsync: ::vsync::,
+					width: ::width::,
+					x: ::x::,
+					y: ::y::
+				},::end::
+			]
 			
-		}
+		};
 		
 		#if (js && html5)
 		#if (munit || utest)

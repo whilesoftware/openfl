@@ -2,6 +2,7 @@ package openfl._internal.renderer.dom;
 
 
 import openfl._internal.renderer.RenderSession;
+import openfl._internal.text.TextEngine;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFormat;
@@ -12,45 +13,25 @@ import js.html.Element;
 import js.Browser;
 #end
 
+@:access(openfl._internal.text.TextEngine)
 @:access(openfl.text.TextField)
 
 
 class DOMTextField {
 	
 	
-	public static function getFont (format:TextFormat):String {
-		
-		var font = format.italic ? "italic " : "normal ";
-		font += "normal ";
-		font += format.bold ? "bold " : "normal ";
-		font += format.size + "px";
-		font += "/" + (format.size + format.leading + 6) + "px ";
-		
-		font += "" + switch (format.font) {
-			
-			case "_sans": "sans-serif";
-			case "_serif": "serif";
-			case "_typewriter": "monospace";
-			default: "'" + format.font + "'";
-			
-		}
-		
-		return font;
-		
-	}
-	
-	
 	public static function measureText (textField:TextField):Void {
 		
 	 	#if (js && html5)
 	 	
+		var textEngine = textField.__textEngine;
 		var div:Element = textField.__div;
 		
 		if (div == null) {
 			
 			div = cast Browser.document.createElement ("div");
-			div.innerHTML = new EReg ("\n", "g").replace (textField.__text, "<br>");
-			div.style.setProperty ("font", getFont (textField.__textFormat), null);
+			div.innerHTML = new EReg ("\n", "g").replace (textEngine.text, "<br>");
+			div.style.setProperty ("font", TextEngine.getFont (textField.__textFormat), null);
 			div.style.setProperty ("pointer-events", "none", null);
 			div.style.position = "absolute";
 			div.style.top = "110%"; // position off-screen!
@@ -58,18 +39,18 @@ class DOMTextField {
 			
 		}
 		
-		textField.__measuredWidth = div.clientWidth;
+		textEngine.__measuredWidth = div.clientWidth;
 		
 		// Now set the width so that the height is accurate as a
 		// function of the flow within the width bounds...
 		
 		if (textField.__div == null) {
 			
-			div.style.width = Std.string (textField.__width - 4) + "px";
+			div.style.width = Std.string (textEngine.width - 4) + "px";
 			
 		}
 		
-		textField.__measuredHeight = div.clientHeight;
+		textEngine.__measuredHeight = div.clientHeight;
 		
 		if (textField.__div == null) {
 			
@@ -86,30 +67,59 @@ class DOMTextField {
 		
 		#if (js && html5)
 		
+		var textEngine = textField.__textEngine;
+		
 		if (textField.stage != null && textField.__worldVisible && textField.__renderable) {
 			
 			if (textField.__dirty || textField.__div == null) {
 				
-				if (textField.__text != "" || textField.background || textField.border) {
+				if (textEngine.text != "" || textEngine.background || textEngine.border || textEngine.type == INPUT) {
 					
 					if (textField.__div == null) {
 						
 						textField.__div = cast Browser.document.createElement ("div");
 						DOMRenderer.initializeElement (textField, textField.__div, renderSession);
+						textField.__style.setProperty ("outline", "none", null);
+						
+						textField.__div.addEventListener ("input", function (event) {
+							
+							event.preventDefault ();
+							
+							// TODO: Set caret index, and replace only selection
+							
+							if (textField.htmlText != textField.__div.innerHTML) {
+								
+								textField.htmlText = textField.__div.innerHTML;
+								textField.__dirty = false;
+								
+							}
+							
+						}, true);
+						
+					}
+					
+					if (textEngine.selectable) {
+						
+						textField.__style.setProperty ("cursor", "text", null);
+						
+					} else {
+						
 						textField.__style.setProperty ("cursor", "inherit", null);
 						
 					}
+					
+					untyped (textField.__div).contentEditable = (textEngine.type == INPUT);
 					
 					var style = textField.__style;
 					
 					// TODO: Handle ranges using span
 					// TODO: Vertical align
 					
-					textField.__div.innerHTML = textField.__text;
+					textField.__div.innerHTML = textEngine.text;
 					
-					if (textField.background) {
+					if (textEngine.background) {
 						
-						style.setProperty ("background-color", "#" + StringTools.hex (textField.backgroundColor, 6), null);
+						style.setProperty ("background-color", "#" + StringTools.hex (textEngine.backgroundColor, 6), null);
 						
 					} else {
 						
@@ -117,9 +127,9 @@ class DOMTextField {
 						
 					}
 					
-					if (textField.border) {
+					if (textEngine.border) {
 						
-						style.setProperty ("border", "solid 1px #" + StringTools.hex (textField.borderColor, 6), null);
+						style.setProperty ("border", "solid 1px #" + StringTools.hex (textEngine.borderColor, 6), null);
 						
 					} else {
 						
@@ -127,20 +137,20 @@ class DOMTextField {
 						
 					}
 					
-					style.setProperty ("font", getFont (textField.__textFormat), null);
+					style.setProperty ("font", TextEngine.getFont (textField.__textFormat), null);
 					style.setProperty ("color", "#" + StringTools.hex (textField.__textFormat.color, 6), null);
 					
-					if (textField.autoSize != TextFieldAutoSize.NONE) {
+					if (textEngine.autoSize != TextFieldAutoSize.NONE) {
 						
 						style.setProperty ("width", "auto", null);
 						
 					} else {
 						
-						style.setProperty ("width", textField.__width + "px", null);
+						style.setProperty ("width", textEngine.width + "px", null);
 						
 					}
 					
-					style.setProperty ("height", textField.__height + "px", null);
+					style.setProperty ("height", textEngine.height + "px", null);
 					
 					switch (textField.__textFormat.align) {
 						

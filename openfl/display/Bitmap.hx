@@ -52,9 +52,10 @@ import js.html.ImageElement;
 
 @:access(openfl.display.BitmapData)
 @:access(openfl.display.Graphics)
+@:access(openfl.geom.Rectangle)
 
 
-class Bitmap extends DisplayObjectContainer {
+class Bitmap extends DisplayObject {
 	
 	
 	/**
@@ -113,8 +114,9 @@ class Bitmap extends DisplayObjectContainer {
 		
 		if (bitmapData != null) {
 			
-			var bounds = new Rectangle (0, 0, bitmapData.width, bitmapData.height);
-			bounds = bounds.transform (matrix);
+			var bounds = Rectangle.__temp;
+			bounds.setTo (0, 0, bitmapData.width, bitmapData.height);
+			bounds.__transform (bounds, matrix);
 			
 			rect.__expand (bounds.x, bounds.y, bounds.width, bounds.height);
 			
@@ -125,11 +127,14 @@ class Bitmap extends DisplayObjectContainer {
 	
 	@:noCompletion private override function __hitTest (x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool):Bool {
 		
-		if (!visible || bitmapData == null) return false;
+		if (!visible || __isMask || bitmapData == null) return false;
 		
-		var point = globalToLocal (new Point (x, y));
+		__getTransform ();
 		
-		if (point.x > 0 && point.y > 0 && point.x <= bitmapData.width && point.y <= bitmapData.height) {
+		var px = __worldTransform.__transformInverseX (x, y);
+		var py = __worldTransform.__transformInverseY (x, y);
+		
+		if (px > 0 && py > 0 && px <= bitmapData.width && py <= bitmapData.height) {
 			
 			if (stack != null && !interactiveOnly) {
 				
@@ -182,11 +187,24 @@ class Bitmap extends DisplayObjectContainer {
 	
 	
 	@:noCompletion @:dox(hide) public override function __renderGL (renderSession:RenderSession):Void {
+		if (scrollRect != null) {
+			renderSession.spriteBatch.stop();
+			var m = __worldTransform.clone();
+			var clip = Rectangle.__temp;
+			scrollRect.__transform(clip, m);
+			clip.y = renderSession.renderer.height - clip.y - clip.height;
+			renderSession.spriteBatch.start(clip);
+		}
 		
 		GLBitmap.render (this, renderSession);
 		
+		if (scrollRect != null) {
+			renderSession.spriteBatch.stop();
+			renderSession.spriteBatch.start();
+		}
+		
 	}
-
+	
 	
 	@:noCompletion @:dox(hide) public override function __updateMask (maskGraphics:Graphics):Void {
 		
@@ -230,13 +248,7 @@ class Bitmap extends DisplayObjectContainer {
 		
 		if (bitmapData != null) {
 			
-			if (value != bitmapData.height) {
-				
-				__setTransformDirty ();
-				scaleY = value / bitmapData.height;
-				
-			}
-			
+			scaleY = value / bitmapData.height;
 			return value;
 			
 		}
@@ -263,13 +275,7 @@ class Bitmap extends DisplayObjectContainer {
 		
 		if (bitmapData != null) {
 			
-			if (value != bitmapData.width) {
-				
-				__setTransformDirty ();
-				scaleX = value / bitmapData.width;
-				
-			}
-			
+			scaleX = value / bitmapData.width;
 			return value;
 			
 		}
