@@ -51,7 +51,7 @@ package openfl.filters; #if !flash #if !openfl_legacy
  * filter is turned off if the resulting image exceeds the maximum
  * dimensions.</p>
  */
-@:final class BlurFilter extends BitmapFilter {
+class BlurFilter extends BitmapFilter {
 	
 	
 	/**

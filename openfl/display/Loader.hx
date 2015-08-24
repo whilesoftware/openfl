@@ -11,8 +11,6 @@ import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.events.IOErrorEvent;
 import openfl.geom.Rectangle;
-import openfl.net.URLLoader;
-import openfl.net.URLLoaderDataFormat;
 import openfl.net.URLRequest;
 import openfl.system.LoaderContext;
 import openfl.utils.ByteArray;
@@ -402,43 +400,11 @@ class Loader extends Sprite {
 			
 		}
 		
-		#if sys
-		
-		if (request.url != null && request.url.indexOf ("http://") > -1 || request.url.indexOf ("https://") > -1) {
-			
-			var loader = new URLLoader ();
-			loader.addEventListener (Event.COMPLETE, function (e) {
-				
-				BitmapData_onLoad (BitmapData.fromBytes (loader.data));
-				
-			});
-			loader.addEventListener (IOErrorEvent.IO_ERROR, function (e) {
-				
-				BitmapData_onError (e);
-				
-			});
-			loader.dataFormat = URLLoaderDataFormat.BINARY;
-			loader.load (request);
-			return;
-			
-		}
-		
-		#end
-		
 		var worker = new BackgroundWorker ();
 		
 		worker.doWork.add (function (_) {
 			
-			var path = request.url;
-			var index = path.indexOf ("?");
-			
-			if (index > -1) {
-				
-				path = path.substring (0, index);
-				
-			}
-			
-			BitmapData.fromFile (path, function (bitmapData) worker.sendComplete (bitmapData), function () worker.sendError (IOErrorEvent.IO_ERROR));
+			BitmapData.fromFile (request.url, function (bitmapData) worker.sendComplete (bitmapData), function () worker.sendError (IOErrorEvent.IO_ERROR));
 			
 		});
 		
@@ -595,7 +561,7 @@ class Loader extends Sprite {
 			
 			var event = new Event (Event.UNLOAD);
 			event.currentTarget = this;
-			__dispatchEvent (event);
+			dispatchEvent (event);
 			
 		}
 		

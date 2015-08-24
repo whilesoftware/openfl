@@ -12,10 +12,10 @@ import openfl.events.GameInputEvent;
 @:access(openfl.ui.GameInputDevice)
 
 
-@:final class GameInput extends EventDispatcher {
+class GameInput extends EventDispatcher {
 	
 	
-	public static var isSupported = true;
+	public static var isAvailable = true;
 	public static var numDevices (default, null) = 0;
 	
 	private static var __devices = new Map<Gamepad, GameInputDevice> ();
@@ -44,27 +44,9 @@ import openfl.events.GameInputEvent;
 	}
 	
 	
-	private static function __getDevice (gamepad:Gamepad):GameInputDevice {
-		
-		if (gamepad == null) return null;
-		
-		if (!__devices.exists (gamepad)) {
-			
-			var device = new GameInputDevice (Std.string (gamepad.id), gamepad.name);
-			__devices.set (gamepad, device);
-			numDevices = Lambda.count (__devices);
-			
-		}
-		
-		return __devices.get (gamepad);
-		
-	}
-	
-	
 	private static function __onGamepadAxisMove (gamepad:Gamepad, axis:GamepadAxis, value:Float):Void {
 		
-		var device = __getDevice (gamepad);
-		if (device == null) return;
+		var device = __devices.get (gamepad);
 		
 		if (device.enabled) {
 			
@@ -87,8 +69,7 @@ import openfl.events.GameInputEvent;
 	
 	private static function __onGamepadButtonDown (gamepad:Gamepad, button:GamepadButton):Void {
 		
-		var device = __getDevice (gamepad);
-		if (device == null) return;
+		var device = __devices.get (gamepad);
 		
 		if (device.enabled) {
 			
@@ -111,8 +92,7 @@ import openfl.events.GameInputEvent;
 	
 	private static function __onGamepadButtonUp (gamepad:Gamepad, button:GamepadButton):Void {
 		
-		var device = __getDevice (gamepad);
-		if (device == null) return;
+		var device = __devices.get (gamepad);
 		
 		if (device.enabled) {
 			
@@ -135,8 +115,9 @@ import openfl.events.GameInputEvent;
 	
 	private static function __onGamepadConnect (gamepad:Gamepad):Void {
 		
-		var device = __getDevice (gamepad);
-		if (device == null) return;
+		var device = new GameInputDevice (gamepad.guid, gamepad.name);
+		__devices.set (gamepad, device);
+		numDevices = Lambda.count (__devices);
 		
 		for (instance in __instances) {
 			

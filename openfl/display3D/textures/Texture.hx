@@ -12,7 +12,7 @@ import openfl.utils.UInt8Array;
 using openfl.display.BitmapData;
 
 
-@:final class Texture extends TextureBase {
+class Texture extends TextureBase {
 	
 	
 	public var optimizeForRenderToTexture:Bool;
@@ -63,7 +63,7 @@ using openfl.display.BitmapData;
 		
 		#else
 		
-		var image = bitmapData.image;
+		var image = @:privateAccess (bitmapData.__image);
 		
 		if (!image.premultiplied && image.transparent) {
 			

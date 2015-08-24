@@ -31,7 +31,7 @@ import js.Browser;
  *
  * <p>All properties of the Capabilities class are read-only.</p>
  */
-@:final class Capabilities {
+class Capabilities {
 	
 	
 	/**
@@ -439,42 +439,30 @@ import js.Browser;
 	
 	@:noCompletion private static function get_screenResolutionX ():Float { 
 		
-		var window = Lib.application.window;
+		#if (js && html5)
 		
-		if (window != null) {
-			
-			var display = window.display;
-			
-			if (display != null) {
-				
-				return display.currentMode.width;
-				
-			}
-			
-		}
+		return Browser.window.screen.width;
+		
+		#else
 		
 		return 0;
+		
+		#end
 		
 	}
 	
 	
 	@:noCompletion private static function get_screenResolutionY ():Float {
 		
-		var window = Lib.application.window;
+		#if (js && html5)
 		
-		if (window != null) {
-			
-			var display = window.display;
-			
-			if (display != null) {
-				
-				return display.currentMode.height;
-				
-			}
-			
-		}
+		return Browser.window.screen.height;
+		
+		#else
 		
 		return 0;
+		
+		#end
 		
 	}
 	

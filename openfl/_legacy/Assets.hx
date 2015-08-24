@@ -1151,7 +1151,6 @@ class Assets {
 		if (library != null) {
 			
 			cache.clear (name + ":");
-			library.unload ();
 			library.eventCallback = null;
 			
 		}
@@ -1367,13 +1366,6 @@ class AssetLibrary {
 		handler (null);
 		
 		#end
-		
-	}
-	
-	
-	public function unload ():Void {
-		
-		
 		
 	}
 	

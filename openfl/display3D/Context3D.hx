@@ -21,7 +21,7 @@ import openfl.utils.Float32Array;
 import openfl.Lib;
 
 
-@:final class Context3D {
+class Context3D {
 	
 	
 	private static var TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE;

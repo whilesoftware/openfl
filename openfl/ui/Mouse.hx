@@ -16,7 +16,7 @@ import openfl.Lib;
 @:access(openfl.display.Stage)
 
 
-@:final class Mouse {
+class Mouse {
 	
 	
 	/**

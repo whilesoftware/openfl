@@ -47,7 +47,7 @@ import js.Browser;
  * <p><b>Note:</b> The Multitouch feature is not supported for SWF files
  * embedded in HTML running on Mac OS.</p>
  */
-@:final class Multitouch {
+class Multitouch {
 	
 	
 	/**

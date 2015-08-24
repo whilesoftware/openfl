@@ -2,19 +2,11 @@ package openfl.display; #if !flash #if !openfl_legacy
 
 
 import lime.graphics.cairo.Cairo;
-import openfl._internal.renderer.cairo.CairoGraphics;
-import openfl._internal.renderer.canvas.CanvasGraphics;
 import openfl._internal.renderer.opengl.utils.FilterTexture;
 import openfl.errors.ArgumentError;
 import openfl._internal.renderer.opengl.utils.GraphicsRenderer;
 import openfl._internal.renderer.opengl.utils.DrawPath;
 import openfl.display.GraphicsPathCommand;
-import openfl.display.GraphicsBitmapFill;
-import openfl.display.GraphicsEndFill;
-import openfl.display.GraphicsGradientFill;
-import openfl.display.GraphicsPath;
-import openfl.display.GraphicsSolidFill;
-import openfl.display.GraphicsStroke;
 import openfl.display.Tilesheet;
 import openfl.geom.Matrix;
 import openfl.geom.Point;
@@ -42,11 +34,7 @@ import js.html.CanvasRenderingContext2D;
  *
  * <p>The Graphics class is final; it cannot be subclassed.</p>
  */
-
-@:access(openfl.geom.Rectangle)
-
-
-@:final class Graphics {
+class Graphics {
 	
 	
 	public static inline var TILE_SCALE = 0x0001;
@@ -56,23 +44,13 @@ import js.html.CanvasRenderingContext2D;
 	public static inline var TILE_TRANS_2x2 = 0x0010;
 	public static inline var TILE_RECT = 0x0020;
 	public static inline var TILE_ORIGIN = 0x0040;
-	
 	public static inline var TILE_BLEND_NORMAL = 0x00000000;
 	public static inline var TILE_BLEND_ADD = 0x00010000;
-	public static inline var TILE_BLEND_MULTIPLY = 0x00020000;
-	public static inline var TILE_BLEND_SCREEN = 0x00040000;
-	public static inline var TILE_BLEND_SUBTRACT = 0x00080000;
-	public static inline var TILE_BLEND_DARKEN = 0x00100000;
-	public static inline var TILE_BLEND_LIGHTEN = 0x00200000;
-	public static inline var TILE_BLEND_OVERLAY = 0x00400000;
-	public static inline var TILE_BLEND_HARDLIGHT = 0x00800000;
-	public static inline var TILE_BLEND_DIFFERENCE = 0x01000000;
-	public static inline var TILE_BLEND_INVERT = 0x02000000;
 	
 	@:noCompletion public var __hardware:Bool;
 	@:noCompletion private var __bounds:Rectangle;
 	@:noCompletion private var __commands:Array<DrawCommand> = [];
-	@:noCompletion private var __dirty (default, set):Bool = true;
+	@:noCompletion private var __dirty(default, set):Bool = true;
 	@:noCompletion private var __glStack:Array<GLStack> = [];
 	@:noCompletion private var __drawPaths:Array<DrawPath>;
 	@:noCompletion private var __halfStrokeWidth:Float;
@@ -92,8 +70,7 @@ import js.html.CanvasRenderingContext2D;
 	#end
 	
 	@:noCompletion private var __bitmap:BitmapData;
-	
-	
+
 	public function new () {
 		
 		__commands = new Array ();
@@ -103,7 +80,7 @@ import js.html.CanvasRenderingContext2D;
 		__hardware = true;
 		
 		#if (js && html5)
-		moveTo (0, 0);
+		moveTo( 0, 0);
 		#end
 	}
 	
@@ -283,9 +260,8 @@ import js.html.CanvasRenderingContext2D;
 		__hardware = true;
 		
 		#if (js && html5)
-		moveTo (0, 0);
+		moveTo( 0, 0);
 		#end
-		
 	}
 	
 	
@@ -308,60 +284,47 @@ import js.html.CanvasRenderingContext2D;
 		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
 		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
 		
+		// Calculate the bounds of the bezier function 
 		var ix1, iy1, ix2, iy2;
 		
 		ix1 = anchorX;
 		ix2 = anchorX;
 		
-		if (!(((controlX1 < anchorX && controlX1 > __positionX) || (controlX1 > anchorX && controlX1 < __positionX)) && ((controlX2 < anchorX && controlX2 > __positionX) || (controlX2 > anchorX && controlX2 < __positionX)))) {
-			
-			var u = (2 * __positionX - 4 * controlX1 + 2 * controlX2);
+		if ( !( ( (controlX1 < anchorX && controlX1 > __positionX) || (controlX1 > anchorX && controlX1 < __positionX) ) && ( (controlX2 < anchorX && controlX2 > __positionX) || (controlX2 > anchorX && controlX2 < __positionX) ) ) )
+		{
+			var u = (2 * __positionX - 4 * controlX1 + 2 * controlX2 );
 			var v = (controlX1 - __positionX);
-			var w = (-__positionX + 3 * controlX1 + anchorX - 3 * controlX2);
+			var w = ( -__positionX + 3 * controlX1 + anchorX - 3 * controlX2 );
 			
-			var t1 = (-u + Math.sqrt (u * u - 4 * v * w)) / (2 * w);
-			var t2 = (-u - Math.sqrt (u * u - 4 * v * w)) / (2 * w);
+			var t1 = ( -u + Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			var t2 = ( -u - Math.sqrt( u * u - 4 * v * w)) / (2 * w);
 			
-			if (t1 > 0 && t1 < 1) {
-				
-				ix1 = __calculateBezierCubicPoint (t1, __positionX, controlX1, controlX2, anchorX);
-				
-			}
+			if ( t1 > 0 && t1 < 1 )
+				ix1 = __calculateBezierCubicPoint( t1, __positionX, controlX1, controlX2, anchorX );
 			
-			if (t2 > 0 && t2 < 1) {
-				
-				ix2 = __calculateBezierCubicPoint (t2, __positionX, controlX1, controlX2, anchorX);
-				
-			}
-			
+			if( t2 > 0 && t2 < 1 )
+				ix2 = __calculateBezierCubicPoint( t2, __positionX, controlX1, controlX2, anchorX );
 		}
 		
 		iy1 = anchorY;
 		iy2 = anchorY;
 		
-		if (!(((controlY1 < anchorY && controlY1 > __positionX) || (controlY1 > anchorY && controlY1 < __positionX)) && ((controlY2 < anchorY && controlY2 > __positionX) || (controlY2 > anchorY && controlY2 < __positionX)))) {
-			
-			var u = (2 * __positionX - 4 * controlY1 + 2 * controlY2);
+		if ( !( ( (controlY1 < anchorY && controlY1 > __positionX) || (controlY1 > anchorY && controlY1 < __positionX) ) && ( (controlY2 < anchorY && controlY2 > __positionX) || (controlY2 > anchorY && controlY2 < __positionX) ) ) )
+		{
+			var u = (2 * __positionX - 4 * controlY1 + 2 * controlY2 );
 			var v = (controlY1 - __positionX);
-			var w = (-__positionX + 3 * controlY1 + anchorY - 3 * controlY2);
+			var w = ( -__positionX + 3 * controlY1 + anchorY - 3 * controlY2 );
 			
-			var t1 = (-u + Math.sqrt (u * u - 4 * v * w)) / (2 * w);
-			var t2 = (-u - Math.sqrt (u * u - 4 * v * w)) / (2 * w);
+			var t1 = ( -u + Math.sqrt( u * u - 4 * v * w)) / (2 * w);
+			var t2 = ( -u - Math.sqrt( u * u - 4 * v * w)) / (2 * w);
 			
-			if (t1 > 0 && t1 < 1) {
-				
-				iy1 = __calculateBezierCubicPoint (t1, __positionX, controlY1, controlY2, anchorY);
-				
-			}
+			if ( t1 > 0 && t1 < 1 )
+				iy1 = __calculateBezierCubicPoint( t1, __positionX, controlY1, controlY2, anchorY );
 			
-			if (t2 > 0 && t2 < 1) {
-				
-				iy2 = __calculateBezierCubicPoint (t2, __positionX, controlY1, controlY2, anchorY);
-				
-			}
-			
+			if( t2 > 0 && t2 < 1 )
+				iy2 = __calculateBezierCubicPoint( t2, __positionX, controlY1, controlY2, anchorY );
 		}
-		
+
 		__inflateBounds (ix1 - __halfStrokeWidth, iy1 - __halfStrokeWidth);
 		__inflateBounds (ix1 + __halfStrokeWidth, iy1 + __halfStrokeWidth);
 		__inflateBounds (ix2 - __halfStrokeWidth, iy2 - __halfStrokeWidth);
@@ -413,28 +376,27 @@ import js.html.CanvasRenderingContext2D;
 		__inflateBounds (__positionX - __halfStrokeWidth, __positionY - __halfStrokeWidth);
 		__inflateBounds (__positionX + __halfStrokeWidth, __positionY + __halfStrokeWidth);
 		
+		// Calculate the bounds of the bezier function 
 		var ix, iy;
 		
-		if ((controlX < anchorX && controlX > __positionX) || (controlX > anchorX && controlX < __positionX)) {
-			
+		if ( (controlX < anchorX && controlX > __positionX) || (controlX > anchorX && controlX < __positionX) )
+		{
 			ix = anchorX;
-			
-		} else {
-			
+		}
+		else
+		{
 			var tx = ((__positionX - controlX) / (__positionX - 2 * controlX + anchorX));
-			ix = __calculateBezierQuadPoint (tx, __positionX, controlX, anchorX);
-			
+			ix = __calculateBezierQuadPoint( tx, __positionX, controlX, anchorX );
 		}
 		
-		if ((controlY < anchorY && controlY > __positionY) || (controlY > anchorY && controlY < __positionY)) {
-			
+		if ( (controlY < anchorY && controlY > __positionY) || (controlY > anchorY && controlY < __positionY) )
+		{
 			iy = anchorY;
-			
-		} else {
-			
-			var ty = ((__positionY - controlY) / (__positionY - (2 * controlY) + anchorY));
-			iy = __calculateBezierQuadPoint (ty, __positionY, controlY, anchorY);
-			
+		}
+		else
+		{
+			var ty = ((__positionY - controlY) / (__positionY - 2*controlY + anchorY));
+			iy = __calculateBezierQuadPoint( ty, __positionY, controlY, anchorY );
 		}
 		
 		__inflateBounds (ix - __halfStrokeWidth, iy - __halfStrokeWidth);
@@ -525,68 +487,7 @@ import js.html.CanvasRenderingContext2D;
 	 */
 	public function drawGraphicsData (graphicsData:Vector<IGraphicsData>):Void {
 		
-		var fill:GraphicsSolidFill;
-		var bitmapFill:GraphicsBitmapFill;
-		var gradientFill:GraphicsGradientFill;
-		var stroke:GraphicsStroke;
-		var path:GraphicsPath;
-		
-		for (graphics in graphicsData) {
-			
-			if (Std.is (graphics, GraphicsSolidFill)) {
-				
-				fill = cast graphics;
-				beginFill (fill.color, fill.alpha);
-				
-			} else if (Std.is (graphics, GraphicsBitmapFill)) {
-				
-				bitmapFill = cast graphics;
-				beginBitmapFill (bitmapFill.bitmapData, bitmapFill.matrix, bitmapFill.repeat, bitmapFill.smooth);
-				
-			} else if (Std.is (graphics, GraphicsGradientFill)) {
-				
-				gradientFill = cast graphics;
-				beginGradientFill (gradientFill.type, gradientFill.colors, gradientFill.alphas, gradientFill.ratios, gradientFill.matrix, gradientFill.spreadMethod, gradientFill.interpolationMethod, gradientFill.focalPointRatio);
-				
-			} else if (Std.is (graphics, GraphicsStroke)) {
-				
-				stroke = cast graphics;
-				
-				if (Std.is (stroke.fill, GraphicsSolidFill)) {
-					
-					fill = cast stroke.fill;
-					lineStyle (stroke.thickness, fill.color, fill.alpha, stroke.pixelHinting, stroke.scaleMode, stroke.caps, stroke.joints, stroke.miterLimit);
-					
-				} else {
-					
-					lineStyle (stroke.thickness, 0, 1, stroke.pixelHinting, stroke.scaleMode, stroke.caps, stroke.joints, stroke.miterLimit);
-					
-					if (Std.is (stroke.fill, GraphicsBitmapFill)) {
-						
-						bitmapFill = cast stroke.fill;
-						lineBitmapStyle (bitmapFill.bitmapData, bitmapFill.matrix, bitmapFill.repeat, bitmapFill.smooth);
-						
-					} else if (Std.is (stroke.fill, GraphicsGradientFill)) {
-						
-						gradientFill = cast stroke.fill;
-						lineGradientStyle (gradientFill.type, gradientFill.colors, gradientFill.alphas, gradientFill.ratios, gradientFill.matrix, gradientFill.spreadMethod, gradientFill.interpolationMethod, gradientFill.focalPointRatio);
-						
-					}
-					
-				}
-				
-			} else if (Std.is (graphics, GraphicsPath)) {
-				
-				path = cast graphics;
-				drawPath (path.commands, path.data, path.winding);
-				
-			} else if (Std.is (graphics, GraphicsEndFill)) {
-				
-				endFill ();
-				
-			}
-			
-		}
+		openfl.Lib.notImplemented ("Graphics.drawGraphicsData");
 		
 	}
 	
@@ -646,23 +547,13 @@ import js.html.CanvasRenderingContext2D;
 				
 				case GraphicsPathCommand.MOVE_TO:
 					
-					moveTo (data[dataIndex], data[dataIndex + 1]);
+					moveTo (data[dataIndex], data[dataIndex + 1]);	
 					dataIndex += 2;
 					
 				case GraphicsPathCommand.LINE_TO:
 					
 					lineTo (data[dataIndex], data[dataIndex + 1]);
 					dataIndex += 2;
-
-				case GraphicsPathCommand.WIDE_MOVE_TO:
-					
-					moveTo(data[dataIndex + 2], data[dataIndex + 3]); break;
-					dataIndex += 4;
-
-				case GraphicsPathCommand.WIDE_LINE_TO:
-					
-					lineTo(data[dataIndex + 2], data[dataIndex + 3]); break;
-					dataIndex += 4;
 					
 				case GraphicsPathCommand.CURVE_TO:
 					
@@ -798,30 +689,21 @@ import js.html.CanvasRenderingContext2D;
 	 */
 	public function drawTriangles (vertices:Vector<Float>, ?indices:Vector<Int> = null, ?uvtData:Vector<Float> = null, ?culling:TriangleCulling = null, ?colors:Vector<Int>, blendMode:Int = 0):Void {
 		
-		var vlen = Std.int (vertices.length / 2);
+		var vlen = Std.int(vertices.length / 2);
 		
 		if (culling == null) {
-			
 			culling = NONE;
-			
 		}
 		
 		if (indices == null) {
-			
 			if (vlen % 3 != 0) {
-				
-				throw new ArgumentError ("Not enough vertices to close a triangle.");
-				
+				throw new ArgumentError("Not enough vertices to close a triangle.");
 			}
-			
-			indices = new Vector<Int> ();
+			indices = new Vector<Int>();
 			
 			for (i in 0...vlen) {
-				
-				indices.push (i);
-				
+				indices.push(i);
 			}
-			
 		}
 		
 		__inflateBounds (0, 0);
@@ -832,17 +714,14 @@ import js.html.CanvasRenderingContext2D;
 		var maxY = Math.NEGATIVE_INFINITY;
 		
 		for (i in 0...vlen) {
-			
 			tmpx = vertices[i * 2];
 			tmpy = vertices[i * 2 + 1];
 			if (maxX < tmpx) maxX = tmpx;
 			if (maxY < tmpy) maxY = tmpy;
-			
 		}
 		
 		__inflateBounds (maxX, maxY);
 		__commands.push (DrawTriangles(vertices, indices, uvtData, culling, colors, blendMode));
-		
 		__dirty = true;
 		__visible = true;
 		
@@ -1167,29 +1046,21 @@ import js.html.CanvasRenderingContext2D;
 		
 	}
 	
-	
-	@:noCompletion private function __calculateBezierCubicPoint (t:Float, p1:Float, p2:Float, p3:Float, p4:Float):Float {
-		
-		var iT = 1 - t;
-		return p1 * (iT * iT * iT) + 3 * p2 * t * (iT * iT) + 3 * p3 * iT * (t * t) + p4 * (t * t * t);
-		
-	}
-	
-	
-	@:noCompletion private function __calculateBezierQuadPoint (t:Float, p1:Float, p2:Float, p3:Float):Float {
-		
+	@:noCompletion private function __calculateBezierQuadPoint( t:Float, p1:Float, p2:Float, p3:Float ) {
 		var iT = 1 - t;
 		return iT * iT * p1 + 2 * iT * t * p2 + t * t * p3;
-		
 	}
 	
+	@:noCompletion private function __calculateBezierCubicPoint( t:Float, p1:Float, p2:Float, p3:Float, p4:Float ) {
+		var iT = 1 - t;
+		return p1 * (iT * iT * iT) + 3 * p2 * t * (iT * iT) + 3 * p3 * iT * ( t * t ) + p4 * ( t * t * t );
+	}
 	
 	@:noCompletion private function __getBounds (rect:Rectangle, matrix:Matrix):Void {
 		
 		if (__bounds == null) return;
 		
-		var bounds = openfl.geom.Rectangle.__temp;
-		__bounds.__transform (bounds, matrix);
+		var bounds = __bounds.transform (matrix);
 		rect.__expand (bounds.x, bounds.y, bounds.width, bounds.height);
 		
 	}
@@ -1197,54 +1068,12 @@ import js.html.CanvasRenderingContext2D;
 	
 	@:noCompletion private function __hitTest (x:Float, y:Float, shapeFlag:Bool, matrix:Matrix):Bool {
 		
+		//TODO: Shape flag
+		
 		if (__bounds == null) return false;
 		
-		var px = matrix.__transformInverseX (x, y);
-		var py = matrix.__transformInverseY (x, y);
-		
-		if (px > 0 && py > 0 && __bounds.contains (px, py)) {
-			
-			if (shapeFlag) {
-				
-				if (__dirty) {
-					
-					#if (js && html5)
-					//CanvasGraphics.render (this, null);
-					#elseif (cpp || neko)
-					//CairoGraphics.render (this, null);
-					#end
-					
-				}
-				
-				#if (js && html5)
-				if (__context != null) {
-					
-					// TODO: Need to replay each path to use isPointInPath, likely what Cairo needed, too
-					//return __context.isPointInPath (Math.round (px - __bounds.x), Math.round (py - __bounds.y));
-					
-				}
-				#elseif (cpp || neko)
-				if (__bitmap != null) {
-				//if (__cairo != null) {
-					
-					// TODO: This does not handle hit testing against invisible fills
-					
-					var pixel = __bitmap.getPixel32 (Math.round (px - __bounds.x), Math.round (py - __bounds.y));
-					return ((pixel >> 24 & 0xFF) > 0);
-					
-					//if (__cairo.inFill (x - bounds.x, y - bounds.y)) return true;
-					//if (__cairo.inStroke (x - bounds.x, y - bounds.y)) return true;
-					
-				}
-				#end
-				
-			}
-			
-			return true;
-			
-		}
-		
-		return false;
+		var bounds = __bounds.transform (matrix);
+		return (x > bounds.x && y > bounds.y && x <= bounds.right && y <= bounds.bottom);
 		
 	}
 	
@@ -1289,23 +1118,11 @@ import js.html.CanvasRenderingContext2D;
 	}
 	
 	
-	
-	
-	// Get & Set Methods
-	
-	
-	
-	
 	@:noCompletion private function set___dirty (value:Bool):Bool {
-		
 		if (value && __owner != null) {
-			
 			@:privateAccess __owner.__setRenderDirty();
-			
 		}
-		
 		return __dirty = value;
-		
 	}
 	
 	
@@ -1331,8 +1148,8 @@ import js.html.CanvasRenderingContext2D;
 	LineGradientStyle (type:GradientType, colors:Array<Dynamic>, alphas:Array<Dynamic>, ratios:Array<Dynamic>, matrix:Matrix, spreadMethod:Null<SpreadMethod>, interpolationMethod:Null<InterpolationMethod>, focalPointRatio:Null<Float>);
 	LineTo (x:Float, y:Float);
 	MoveTo (x:Float, y:Float);
-	DrawPathC (commands:Vector<Int>, data:Vector<Float>, winding:GraphicsPathWinding);
-	OverrideMatrix (matrix:Matrix);
+	DrawPathC(commands:Vector<Int>, data:Vector<Float>, winding:GraphicsPathWinding);
+	OverrideMatrix(matrix:Matrix);
 	
 }
 
@@ -1348,7 +1165,8 @@ import openfl.geom.Point;
 import openfl.geom.Rectangle;
 
 @:access(openfl.display.Tilesheet)
-@:forward()
+
+@:forward(beginBitmapFill, beginFill, beginGradientFill, beginShaderFill, clear, copyFrom, cubicCurveTo, curveTo, drawCircle, drawEllipse, drawGraphicsData, drawPath, drawRect, drawRoundRect, drawRoundRectComplex, drawTriangles, endFill, lineBitmapStyle, lineGradientStyle, lineShaderStyle, lineStyle, lineTo, moveTo, recurse)
 
 
 abstract Graphics(flash.display.Graphics) from flash.display.Graphics to flash.display.Graphics {

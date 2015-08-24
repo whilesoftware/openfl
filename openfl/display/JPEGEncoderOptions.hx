@@ -1,7 +1,7 @@
 package openfl.display; #if !flash
 
 
-@:final class JPEGEncoderOptions {
+class JPEGEncoderOptions {
 	
 	
 	public var quality:Int;

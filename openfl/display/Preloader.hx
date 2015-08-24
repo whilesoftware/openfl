@@ -136,7 +136,7 @@ class Preloader extends LimePreloader {
 		
 		loaded++;
 		
-		onProgress.dispatch (loaded, total);
+		update (loaded, total);
 		
 		if (loaded == total) {
 			
@@ -153,7 +153,7 @@ class Preloader extends LimePreloader {
 		
 		loaded++;
 		
-		onProgress.dispatch (loaded, total);
+		update (loaded, total);
 		
 		if (loaded == total) {
 			

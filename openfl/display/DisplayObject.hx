@@ -166,7 +166,6 @@ import js.html.Element;
 @:access(openfl.display.Graphics)
 @:access(openfl.display.Stage)
 @:access(openfl.geom.ColorTransform)
-@:access(openfl.geom.Rectangle)
 
 
 class DisplayObject extends EventDispatcher implements IBitmapDrawable {
@@ -757,7 +756,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 	
 	@:noCompletion private var __cairo:Cairo;
 	
-	
 	private function new () {
 		
 		super ();
@@ -783,6 +781,35 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		#end
 		
 		name = "instance" + (++__instanceCount);
+		
+	}
+	
+	
+	public override function dispatchEvent (event:Event):Bool {
+		
+		var result = super.dispatchEvent (event);
+		
+		if (event.__isCancelled) {
+			
+			return true;
+			
+		}
+		
+		if (event.bubbles && parent != null && parent != this) {
+			
+			event.eventPhase = EventPhase.BUBBLING_PHASE;
+			
+			if (event.target == null) {
+				
+				event.target = this;
+				
+			}
+			
+			parent.dispatchEvent (event);
+			
+		}
+		
+		return result;
 		
 	}
 		
@@ -875,9 +902,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 	 */
 	public function globalToLocal (pos:Point):Point {
 		
-		pos = pos.clone ();
-		__getTransform ().__transformInversePoint (pos);
-		return pos;
+		return __getTransform ().clone ().invert ().transformPoint (pos);
 		
 	}
 	
@@ -972,7 +997,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		
 		if (__eventMap != null && hasEventListener (event.type)) {
 			
-			var result = super.__dispatchEvent (event);
+			var result = super.dispatchEvent (event);
 			
 			if (event.__isCancelled) {
 				
@@ -985,42 +1010,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		}
 		
 		return false;
-		
-	}
-	
-	
-	@:noCompletion private override function __dispatchEvent (event:Event):Bool {
-		
-		var result = super.__dispatchEvent (event);
-		
-		if (event.__isCancelled) {
-			
-			return true;
-			
-		}
-		
-		if (event.bubbles && parent != null && parent != this) {
-			
-			event.eventPhase = EventPhase.BUBBLING_PHASE;
-			
-			if (event.target == null) {
-				
-				event.target = this;
-				
-			}
-			
-			parent.__dispatchEvent (event);
-			
-		}
-		
-		return result;
-		
-	}
-	
-	
-	@:noCompletion private function __enterFrame ():Void {
-		
-		
 		
 	}
 	
@@ -1109,7 +1098,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		
 		if (__graphics != null) {
 			
-			if (visible && !__isMask && __graphics.__hitTest (x, y, shapeFlag, __getTransform ())) {
+			if (visible && __graphics.__hitTest (x, y, shapeFlag, __getTransform ())) {
 				
 				if (!interactiveOnly) {
 					
@@ -1297,7 +1286,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 			
 			if (sr != null) {
 				if(__worldTransform.a != 1 || __worldTransform.b != 0 || __worldTransform.c != 0 || __worldTransform.d != 1) {
-					sr.__transform(sr, __worldTransform);
+					sr = sr.transform(__worldTransform);
 				}
 				__worldTransform.tx = (x - sr.x) * b00 + (y - sr.y) * b10 + parentTransform.tx;
 				__worldTransform.ty = (x - sr.x) * b01 + (y - sr.y) * b11 + parentTransform.ty;
@@ -1316,7 +1305,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 			
 			if (sr != null) {
 				if(__worldTransform.a != 1 || __worldTransform.b != 0 || __worldTransform.c != 0 || __worldTransform.d != 1) {
-					sr.__transform(sr, __worldTransform);
+					sr = sr.transform(__worldTransform);
 				}
 				__worldTransform.tx = x - scrollRect.x;
 				__worldTransform.ty = y - scrollRect.y;
@@ -1355,16 +1344,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 			
 			#if dom
 			__worldTransformChanged = !__worldTransform.equals (__worldTransformCache);
-			
-			if (__worldTransformCache == null) {
-				
-				__worldTransformCache = __worldTransform.clone ();
-				
-			} else {
-				
-				__worldTransformCache.copyFrom(__worldTransform);
-				
-			}
+			__worldTransformCache = __worldTransform.clone ();
 			
 			var worldClip:Rectangle = null;
 			#end
@@ -1404,7 +1384,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 				if (scrollRect != null) {
 					
 					var bounds = scrollRect.clone ();
-					bounds.__transform (bounds, __worldTransform);
+					bounds = bounds.transform (__worldTransform);
 					
 					if (worldClip != null) {
 						
@@ -1431,8 +1411,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 				
 				if (scrollRect != null) {
 					
-					worldClip = scrollRect.clone ();
-					worldClip.__transform (worldClip, __worldTransform);
+					worldClip = scrollRect.clone ().transform (__worldTransform);
 					
 				}
 				
@@ -1609,8 +1588,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		
 		if (stage != null) {
 			
-			return __getTransform ().__transformInverseX (stage.__mouseX, stage.__mouseY);
-			
+			return globalToLocal (new Point (stage.__mouseX, 0)).x;
 			
 		}
 		
@@ -1623,7 +1601,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		
 		if (stage != null) {
 			
-			return __getTransform ().__transformInverseY (stage.__mouseX, stage.__mouseY);
+			return globalToLocal (new Point (0, stage.__mouseY)).y;
 			
 		}
 		
@@ -1755,7 +1733,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable {
 		}
 		
 		__setTransformDirty ();
-		__transform.matrix = value.matrix;
+		__transform.matrix = value.matrix.clone ();
 		__transform.colorTransform = value.colorTransform.__clone();
 		
 		return __transform;

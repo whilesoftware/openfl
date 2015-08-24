@@ -55,7 +55,19 @@ class CanvasShape {
 					
 				} else {
 					
-					context.drawImage (graphics.__canvas, Math.ceil (graphics.__bounds.x + scrollRect.x), Math.ceil (graphics.__bounds.y + scrollRect.y), scrollRect.width, scrollRect.height, Math.ceil (graphics.__bounds.x + scrollRect.x), Math.ceil (graphics.__bounds.y + scrollRect.y), scrollRect.width, scrollRect.height);
+					//cairo.rectangle ( Math.round( graphics.__bounds.x + scrollRect.x ), Math.round( graphics.__bounds.y + scrollRect.y ), scrollRect.width, scrollRect.height);
+					
+					context.drawImage ( 
+						graphics.__canvas, 
+						Math.ceil( graphics.__bounds.x + scrollRect.x ), 
+						Math.ceil( graphics.__bounds.y  + scrollRect.y ), 
+						scrollRect.width, scrollRect.height,
+						Math.ceil( graphics.__bounds.x + scrollRect.x ), 
+						Math.ceil( graphics.__bounds.y + scrollRect.y ), 
+						scrollRect.width, scrollRect.height
+					);
+					
+					//context.drawImage (gra graphics.__bounds.x + scrollRect.x, graphics.__bounds.y + scrollRect.y, scrollRect.width, scrollRect.height);
 					
 				}
 				

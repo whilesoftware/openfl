@@ -1,7 +1,7 @@
 package openfl.system; #if !flash
 
 
-@:final class ApplicationDomain {
+class ApplicationDomain {
 	
 	
 	public static var currentDomain (default, null) = new ApplicationDomain (null);
