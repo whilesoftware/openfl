@@ -11,7 +11,7 @@ import lime.ui.KeyCode;
  * Keyboard class are constants representing the keys that are most commonly
  * used to control games.
  */
-@:final class Keyboard {
+class Keyboard {
 	
 	
 	/**

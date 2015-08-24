@@ -8,7 +8,7 @@ import openfl.utils.ByteArray;
 import openfl.Vector;
 
 
-@:final class IndexBuffer3D {
+class IndexBuffer3D {
 	
 	
 	public var glBuffer:GLBuffer;

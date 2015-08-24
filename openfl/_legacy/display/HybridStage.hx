@@ -1,18 +1,14 @@
 package openfl._legacy.display; #if (openfl_legacy && lime_hybrid)
 
 
-import lime.app.Application;
 import lime.app.IModule;
 import lime.graphics.RenderContext;
-import lime.graphics.Renderer;
 import lime.system.System;
 import lime.ui.Gamepad;
 import lime.ui.GamepadAxis;
 import lime.ui.GamepadButton;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
-import lime.ui.Touch;
-import lime.ui.Window;
 import openfl._legacy.events.Event;
 import openfl._legacy.Lib;
 import openfl.ui.Keyboard;
@@ -42,7 +38,14 @@ class HybridStage extends ManagedStage implements IModule {
 			
 		}
 		
-		onWindowResize (null, width, height);
+		onWindowResize (width, height);
+		
+	}
+	
+	
+	public function init (context:RenderContext):Void {
+		
+		
 		
 	}
 	
@@ -82,7 +85,7 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onKeyDown (window:Window, keyCode:KeyCode, modifier:KeyModifier):Void {
+	public function onKeyDown (keyCode:KeyCode, modifier:KeyModifier):Void {
 		
 		var flags = 0;
 		if (modifier.shiftKey) flags |= ManagedStage.efShiftDown;
@@ -98,7 +101,7 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onKeyUp (window:Window, keyCode:KeyCode, modifier:KeyModifier):Void {
+	public function onKeyUp (keyCode:KeyCode, modifier:KeyModifier):Void {
 		
 		var flags = 0;
 		if (modifier.shiftKey) flags |= ManagedStage.efShiftDown;
@@ -114,14 +117,7 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onModuleExit (code:Int):Void {
-		
-		
-		
-	}
-	
-	
-	public function onMouseDown (window:Window, x:Float, y:Float, button:Int):Void {
+	public function onMouseDown (x:Float, y:Float, button:Int):Void {
 		
 		var flags = switch (button) {
 			
@@ -138,7 +134,7 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onMouseMove (window:Window, x:Float, y:Float):Void {
+	public function onMouseMove (x:Float, y:Float):Void {
 		
 		var flags = ManagedStage.efPrimaryTouch;
 		
@@ -147,14 +143,14 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onMouseMoveRelative (window:Window, x:Float, y:Float):Void {
+	public function onMouseMoveRelative (x:Float, y:Float):Void {
 		
 		
 		
 	}
 	
 	
-	public function onMouseUp (window:Window, x:Float, y:Float, button:Int):Void {
+	public function onMouseUp (x:Float, y:Float, button:Int):Void {
 		
 		var flags = switch (button) {
 			
@@ -171,7 +167,7 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onMouseWheel (window:Window, deltaX:Float, deltaY:Float):Void {
+	public function onMouseWheel (deltaX:Float, deltaY:Float):Void {
 		
 		var value = deltaY > 0 ? 4 : 3;
 		
@@ -180,167 +176,146 @@ class HybridStage extends ManagedStage implements IModule {
 	}
 	
 	
-	public function onPreloadComplete ():Void {
-		
-		
-		
-	}
-	
-	
-	public function onPreloadProgress (loaded:Int, total:Int):Void {
-		
-		
-		
-	}
-	
-	
-	public function onRenderContextLost (renderer:Renderer):Void {
+	public function onRenderContextLost ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etRenderContextLost } );
 		
 	}
 	
 	
-	public function onRenderContextRestored (renderer:Renderer, context:RenderContext):Void {
+	public function onRenderContextRestored (context:RenderContext):Void {
 		
 		pumpEvent ( { type: ManagedStage.etRenderContextRestored } );
 		
 	}
 	
 	
-	public function onTextEdit (window:Window, text:String, start:Int, length:Int):Void {
+	public function onTextEdit (text:String, start:Int, length:Int):Void {
 		
 		
 		
 	}
 	
 	
-	public function onTextInput (window:Window, text:String):Void {
+	public function onTextInput (text:String):Void {
 		
 		
 		
 	}
 	
 	
-	public function onTouchMove (touch:Touch):Void {
+	public function onTouchMove (x:Float, y:Float, id:Int):Void {
 		
 		var flags = ManagedStage.efPrimaryTouch;
 		
-		pumpEvent ( { type: ManagedStage.etTouchMove, x: touch.x * stageWidth, y: touch.y * stageHeight, value: touch.id, flags: flags } );
+		pumpEvent ( { type: ManagedStage.etTouchMove, x: x, y: y, value: id, flags: flags } );
 		
 	}
 	
 	
-	public function onTouchEnd (touch:Touch):Void {
+	public function onTouchEnd (x:Float, y:Float, id:Int):Void {
 		
 		var flags = ManagedStage.efPrimaryTouch;
 		
-		pumpEvent ( { type: ManagedStage.etTouchEnd, x: touch.x * stageWidth, y: touch.y * stageHeight, value: touch.id, flags: flags } );
+		pumpEvent ( { type: ManagedStage.etTouchEnd, x: x, y: y, value: id, flags: flags } );
 		
 	}
 	
 	
-	public function onTouchStart (touch:Touch):Void {
+	public function onTouchStart (x:Float, y:Float, id:Int):Void {
 		
 		var flags = ManagedStage.efPrimaryTouch;
 		
-		pumpEvent ( { type: ManagedStage.etTouchBegin, x: touch.x * stageWidth, y: touch.y * stageHeight, value: touch.id, flags: flags } );
+		pumpEvent ( { type: ManagedStage.etTouchBegin, x: x, y: y, value: id, flags: flags } );
 		
 	}
 	
 	
-	public function onWindowActivate (window:Window):Void {
+	public function onWindowActivate ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etActivate } );
 		
 	}
 	
 	
-	public function onWindowClose (window:Window):Void {
+	public function onWindowClose ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etQuit } );
 		
 	}
 	
 	
-	public function onWindowCreate (window:Window):Void {
-		
-		
-		
-	}
-	
-	
-	public function onWindowDeactivate (window:Window):Void {
+	public function onWindowDeactivate ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etDeactivate } );
 		
 	}
 	
 	
-	public function onWindowEnter (window:Window):Void {
+	public function onWindowEnter ():Void {
 		
 		
 		
 	}
 	
 	
-	public function onWindowFocusIn (window:Window):Void {
+	public function onWindowFocusIn ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etGotInputFocus } );
 		
 	}
 	
 	
-	public function onWindowFocusOut (window:Window):Void {
+	public function onWindowFocusOut ():Void {
 		
 		pumpEvent ( { type: ManagedStage.etLostInputFocus } );
 		
 	}
 	
 	
-	public function onWindowFullscreen (window:Window):Void {
+	public function onWindowFullscreen ():Void {
 		
 		
 		
 	}
 	
 	
-	public function onWindowLeave (window:Window):Void {
+	public function onWindowLeave ():Void {
 		
 		dispatchEvent (new Event (Event.MOUSE_LEAVE));
 		
 	}
 	
 	
-	public function onWindowMinimize (window:Window):Void {
+	public function onWindowMinimize ():Void {
 		
 		
 		
 	}
 	
 	
-	public function onWindowMove (window:Window, x:Float, y:Float):Void {
+	public function onWindowMove (x:Float, y:Float):Void {
 		
 		
 		
 	}
 	
 	
-	public function onWindowResize (window:Window, width:Int, height:Int):Void {
+	public function onWindowResize (width:Int, height:Int):Void {
 		
 		pumpEvent ( { type: ManagedStage.etResize, x: width, y: height } );
 		
 	}
 	
 	
-	public function onWindowRestore (window:Window):Void {
+	public function onWindowRestore ():Void {
 		
 		
 		
 	}
 	
 	
-	public function render (renderer:Renderer):Void {
+	public function render (context:RenderContext):Void {
 		
 		pumpEvent ( { type: ManagedStage.etPoll } );
 		

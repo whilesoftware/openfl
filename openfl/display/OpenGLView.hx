@@ -182,7 +182,7 @@ class OpenGLView extends DirectRenderer {
 				
 			}
 			
-			if (__render != null) __render (rect);
+			if (__render != null) __render (rect);	
 			
 			renderSession.shaderManager.setShader(null);
 			renderSession.blendModeManager.setBlendMode(null);
@@ -205,10 +205,6 @@ class OpenGLView extends DirectRenderer {
 		return false;
 		
 		#elseif (js && html5)
-		
-		#if (!dom && !webgl)
-		return false;
-		#else
 		
 		if (untyped (!window.WebGLRenderingContext)) {
 			
@@ -234,8 +230,6 @@ class OpenGLView extends DirectRenderer {
 			return (context != null);
 			
 		}
-		#end
-		
 		#end
 		
 		return true;

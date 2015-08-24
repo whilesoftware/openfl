@@ -15,7 +15,7 @@ import openfl.display.IGraphicsData;
  * <code>Graphics.lineBitmapStyle()</code> method, or the
  * <code>Graphics.lineGradientStyle()</code> method. </p>
  */
-@:final class GraphicsStroke implements IGraphicsData implements IGraphicsStroke {
+class GraphicsStroke implements IGraphicsData implements IGraphicsStroke {
 	
 	
 	/**

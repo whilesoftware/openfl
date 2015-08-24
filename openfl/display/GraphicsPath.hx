@@ -21,7 +21,7 @@ import openfl.Vector;
  * <code>GraphicsPath.commands</code> and <code>GraphicsPath.data</code>
  * vector arrays.</p>
  */
-@:final class GraphicsPath implements IGraphicsData implements IGraphicsPath {
+class GraphicsPath implements IGraphicsData implements IGraphicsPath {
 	
 	
 	/**

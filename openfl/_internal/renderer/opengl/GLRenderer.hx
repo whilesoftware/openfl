@@ -36,9 +36,6 @@ import js.html.ImageData;
 @:access(openfl.display.DisplayObject)
 @:access(openfl.display.Graphics)
 @:access(openfl.display.BitmapData)
-@:access(openfl.geom.Matrix)
-@:access(openfl.geom.Rectangle)
-
 
 class GLRenderer extends AbstractRenderer {
 	
@@ -304,25 +301,19 @@ class GLRenderer extends AbstractRenderer {
 	}
 	
 	
-	public static function renderBitmap (shape:DisplayObject, renderSession:RenderSession, smooth:Bool = true):Void {
+	public static function renderBitmap (shape:DisplayObject, renderSession:RenderSession):Void {
 		
 		if (!shape.__renderable || shape.__worldAlpha <= 0) return;
 		if (shape.__graphics == null || shape.__graphics.__bitmap == null) return;
 		
-		var rect = openfl.geom.Rectangle.__temp;
-		var matrix = openfl.geom.Matrix.__temp;
-		
-		rect.setEmpty ();
-		matrix.identity ();
-		
-		shape.__getBounds (rect, matrix);
-		
+		var bounds = shape.getBounds (null);
 		var bitmap = shape.__graphics.__bitmap;
 		
-		matrix.translate (shape.__graphics.__bounds.x, shape.__graphics.__bounds.y);
-		matrix.concat (shape.__worldTransform);
+		var local = new Matrix ();
+		local.translate (shape.__graphics.__bounds.x, shape.__graphics.__bounds.y);
+		local = local.mult (shape.__worldTransform);
 		
-		renderSession.spriteBatch.renderBitmapData (bitmap, smooth, matrix, shape.__worldColorTransform, shape.__worldAlpha, shape.__blendMode, ALWAYS);
+		renderSession.spriteBatch.renderBitmapData (bitmap, true, local, shape.__worldColorTransform, shape.__worldAlpha, shape.__blendMode, ALWAYS);
 		
 	}
 	

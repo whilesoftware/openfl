@@ -1,9 +1,7 @@
 #if !macro
 
 
-@:access(lime.app.Application)
 @:access(lime.Assets)
-@:access(openfl.display.Stage)
 
 
 class ApplicationMain {
@@ -15,14 +13,20 @@ class ApplicationMain {
 	
 	public static function create ():Void {
 		
-		var app = new openfl.display.Application ();
+		var app = new lime.app.Application ();
 		app.create (config);
+		openfl.Lib.application = app;
+		
+		#if !flash
+		var stage = new openfl.display.Stage (app.window.width, app.window.height, config.background);
+		stage.addChild (openfl.Lib.current);
+		app.addModule (stage);
+		#end
 		
 		var display = ::if (PRELOADER_NAME != "")::new ::PRELOADER_NAME:: ()::else::new NMEPreloader ()::end::;
 		
 		preloader = new openfl.display.Preloader (display);
-		app.setPreloader (preloader);
-		preloader.onComplete.add (init);
+		preloader.onComplete = init;
 		preloader.create (config);
 		
 		#if (js && html5)
@@ -89,7 +93,7 @@ class ApplicationMain {
 		openfl.Assets.loadLibrary ("::name::", library_onLoad);
 		::end::::end::::end::
 		
-		if (total == 0) {
+		if (loaded == total) {
 			
 			start ();
 			
@@ -102,45 +106,26 @@ class ApplicationMain {
 		
 		config = {
 			
-			build: "::meta.buildNumber::",
-			company: "::meta.company::",
+			antialiasing: Std.int (::WIN_ANTIALIASING::),
+			background: Std.int (::WIN_BACKGROUND::),
+			borderless: ::WIN_BORDERLESS::,
+			company: "::META_COMPANY::",
+			depthBuffer: ::WIN_DEPTH_BUFFER::,
 			file: "::APP_FILE::",
-			fps: ::WIN_FPS::,
-			name: "::meta.title::",
+			fps: Std.int (::WIN_FPS::),
+			fullscreen: ::WIN_FULLSCREEN::,
+			hardware: ::WIN_HARDWARE::,
+			height: Std.int (::WIN_HEIGHT::),
 			orientation: "::WIN_ORIENTATION::",
-			packageName: "::meta.packageName::",
-			version: "::meta.version::",
-			windows: [
-				::foreach windows::
-				{
-					antialiasing: ::antialiasing::,
-					background: ::background::,
-					borderless: ::borderless::,
-					depthBuffer: ::depthBuffer::,
-					display: ::display::,
-					fullscreen: ::fullscreen::,
-					hardware: ::hardware::,
-					height: ::height::,
-					parameters: "::parameters::",
-					resizable: ::resizable::,
-					stencilBuffer: ::stencilBuffer::,
-					title: "::title::",
-					vsync: ::vsync::,
-					width: ::width::,
-					x: ::x::,
-					y: ::y::
-				},::end::
-			]
+			packageName: "::META_PACKAGE_NAME::",
+			resizable: ::WIN_RESIZABLE::,
+			stencilBuffer: ::WIN_STENCIL_BUFFER::,
+			title: "::APP_TITLE::",
+			version: "::META_VERSION::",
+			vsync: ::WIN_VSYNC::,
+			width: Std.int (::WIN_WIDTH::),
 			
-		};
-		
-		#if hxtelemetry
-		var telemetry = new hxtelemetry.HxTelemetry.Config ();
-		telemetry.allocations = ::if (config.hxtelemetry != null)::("::config.hxtelemetry.allocations::" == "true")::else::true::end::;
-		telemetry.host = ::if (config.hxtelemetry != null)::"::config.hxtelemetry.host::"::else::"localhost"::end::;
-		telemetry.app_name = config.name;
-		Reflect.setField (config, "telemetry", telemetry);
-		#end
+		}
 		
 		#if (js && html5)
 		#if (munit || utest)

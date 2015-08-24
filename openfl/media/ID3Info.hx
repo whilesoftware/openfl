@@ -1,7 +1,7 @@
 package openfl.media; #if !flash
 
 
-@:final class ID3Info {
+class ID3Info {
 	
 	
 	public var album:String;

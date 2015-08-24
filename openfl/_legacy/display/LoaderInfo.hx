@@ -80,7 +80,8 @@ class LoaderInfo extends URLLoader {
 			case "jpg","jpeg": "image/jpeg";
 			case "png": "image/png";
 			case "gif": "image/gif";
-			default: "application/octet-stream";
+			default:
+				throw "Unrecognized file " + __pendingURL;
 			
 		}
 		

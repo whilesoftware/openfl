@@ -35,23 +35,13 @@ class Vector3D {
 	
 	inline public static function angleBetween (a:Vector3D, b:Vector3D):Float {
 		
-		var la = a.length;
-		var lb = b.length;
-		var dot = a.dotProduct (b);
-
-		if (la != 0) {
-
-			dot /= la;
-
-		}
-
-		if (lb != 0) {
-
-			dot /= lb;
-
-		}
-
-		return Math.acos (dot);
+		var a0 = a.clone ();
+		a0.normalize ();
+		var b0 = b.clone ();
+		b0.normalize ();
+		
+		return Math.acos (a0.dotProduct (b0));
+		
 	}
 	
 	
